@@ -1,0 +1,85 @@
+function plotData(sheetName)
+    % Load the pre-saved data
+    load('data.mat', 'data');
+    
+    % Sanitize the sheet name
+    sanitizeSheetName = @(name) regexprep(name, '[^a-zA-Z0-9]', '_');
+    sanitizedSheetName = sanitizeSheetName(sheetName);
+    
+    % Extract the relevant sheet data
+    sheetData = data.(sanitizedSheetName);
+    headers = sheetData.txt(1, :); % First row contains headers
+    numData = sheetData.num;
+    
+    % Check if 'Time' exists in the headers
+    timeIdx = find(strcmp(headers, 'Time'), 1);
+    if isempty(timeIdx)
+        error('The header "Time" does not exist in the sheet "%s".', sheetName);
+    end
+    
+    % Find the indices for the last 5 columns
+    numCols = size(numData, 2);
+    if numCols < 14
+        error('The sheet "%s" does not contain at least 14 columns.', sheetName);
+    end
+    
+    yIdx = numCols - 4 : numCols;
+    
+    % Extract x and y data
+    xData = numData(:, timeIdx);
+    yData = numData(:, yIdx);
+    yHeaders = headers(yIdx);
+    
+    % Determine the valid range of data for plotting
+    validDataLength = size(numData, 1);
+    
+    % Create a figure and set its size
+    figure;
+    set(gcf, 'Units', 'inches', 'Position', [0, 0, 11.92, 5.81]);
+    
+    hold on;
+    colors = lines(3); % Use different colors for the first three fluid groups
+    
+    % Plot the first three fluid groups
+    for j = 1:3
+        plot(xData(1:validDataLength), yData(1:validDataLength, j), 'DisplayName', yHeaders{j}, 'Color', colors(j, :), 'LineWidth', 2);
+    end
+    
+    % Plot the last two columns with the same color but different styles
+    plot(xData(1:validDataLength), yData(1:validDataLength, 4), 'DisplayName', 'LFL', 'Color', colors(1, :), 'LineWidth', 2, 'LineStyle', '--');
+    plot(xData(1:validDataLength), yData(1:validDataLength, 5), 'DisplayName', 'UFL', 'Color', colors(1, :), 'LineWidth', 2, 'LineStyle', '-');
+    
+    % Customize plot
+    xlabel('Time');
+    ylabel('Temperature');
+    title(['The Relationship Between Fluid Temperature and Elapsed Mission Time: ', sheetName]);
+    legend('show', 'Location', 'northeastoutside'); % Move legend out of the way
+    
+    % Adjust axes limits
+    xlim([min(xData(1:validDataLength)), max(xData(1:validDataLength))]);
+    ylim([min(min(yData(1:validDataLength, :))), max(max(yData(1:validDataLength, :)))]);
+    
+    hold off;
+    
+    % Define folder paths
+    figFolder = fullfile(pwd, 'figures'); % Folder for .fig files
+    pngFolder = fullfile(pwd, 'exported_pngs'); % Folder for exported PNGs
+    
+    % Create folders if they don't exist
+    if ~exist(figFolder, 'dir')
+        mkdir(figFolder);
+    end
+    if ~exist(pngFolder, 'dir')
+        mkdir(pngFolder);
+    end
+    
+    % Save the figure in different formats
+    figFilename = ['plot_', sanitizedSheetName];
+    savefig(fullfile(figFolder, [figFilename, '.fig'])); % Save as MATLAB figure
+    saveas(gcf, fullfile(pngFolder, [figFilename, '.png'])); % Save as PNG
+    saveas(gcf, fullfile(pngFolder, [figFilename, '.pdf'])); % Save as PDF
+    
+    % Ensure the figure is saved with the correct size and high quality
+    exportgraphics(gcf, fullfile(pngFolder, [figFilename, '_exported.png']), 'Resolution', 300);
+    exportgraphics(gcf, fullfile(pngFolder, [figFilename, '_exported.pdf']), 'ContentType', 'vector');
+end
