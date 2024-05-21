@@ -11,20 +11,19 @@ def load_data(filename):
     for sheet_name in xls.sheet_names:
         sanitized_name = sanitize_sheet_name(sheet_name)
         data[sanitized_name] = pd.read_excel(filename, sheet_name=sheet_name)
-    return data
+    return data, xls.sheet_names
 
-def plot_data(data, sheet_name):
-    sanitized_sheet_name = sanitize_sheet_name(sheet_name)
+def plot_data(data, original_sheet_name, sanitized_sheet_name, fig_folder, png_folder):
     sheet_data = data[sanitized_sheet_name]
 
     if 'Time' not in sheet_data.columns:
-        raise ValueError(f'The header "Time" does not exist in the sheet "{sheet_name}".')
+        raise ValueError(f'The header "Time" does not exist in the sheet "{original_sheet_name}".')
 
     if len(sheet_data.columns) < 14:
-        raise ValueError(f'The sheet "{sheet_name}" does not contain at least 14 columns.')
+        raise ValueError(f'The sheet "{original_sheet_name}" does not contain at least 14 columns.')
 
     # Extract x and y data
-    x_data = sheet_data['Time'] / 3600
+    x_data = sheet_data['Time'] / 3600  # Convert seconds to hours
     y_data = sheet_data.iloc[:, -5:]
     y_headers = y_data.columns
 
@@ -42,14 +41,28 @@ def plot_data(data, sheet_name):
     ax.plot(x_data, y_data.iloc[:, 4], label='UFL', color=colors[0], linewidth=2, linestyle='-')
 
     # Customize plot
-    ax.set_xlabel('Time')
+    ax.set_xlabel('Time (hours)')
     ax.set_ylabel('Temperature')
-    ax.set_title(f'The Relationship Between Fluid Temperature and Elapsed Mission Time: {sheet_name}')
-    ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
+    ax.set_title(f'The Relationship Between Fluid Temperature and Elapsed Mission Time: {original_sheet_name}')
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05), ncol=3)
+    ax.grid(True)
 
     # Adjust axes limits
     ax.set_xlim([x_data.min(), x_data.max()])
     ax.set_ylim([y_data.min().min(), y_data.max().max()])
+
+    # Save the figure in different formats
+    fig_filename = f'plot_{sanitized_sheet_name}'
+    fig.savefig(os.path.join(fig_folder, f'{fig_filename}.png'))
+    fig.savefig(os.path.join(png_folder, f'{fig_filename}.png'), dpi=300)
+    fig.savefig(os.path.join(png_folder, f'{fig_filename}.pdf'))
+
+    plt.close(fig)
+
+def main():
+    # Load data from the Excel file
+    filename = 'example_data.xlsx'
+    data, sheet_names = load_data(filename)
 
     # Define folder paths
     fig_folder = 'figures'
@@ -59,17 +72,10 @@ def plot_data(data, sheet_name):
     os.makedirs(fig_folder, exist_ok=True)
     os.makedirs(png_folder, exist_ok=True)
 
-    # Save the figure in different formats
-    fig_filename = f'plot_{sanitized_sheet_name}'
-    fig.savefig(os.path.join(fig_folder, f'{fig_filename}.png'))
-    fig.savefig(os.path.join(png_folder, f'{fig_filename}.png'), dpi=300)
+    # Plot data for each sheet
+    for sheet_name in sheet_names:
+        sanitized_sheet_name = sanitize_sheet_name(sheet_name)
+        plot_data(data, sheet_name, sanitized_sheet_name, fig_folder, png_folder)
 
-    plt.close(fig)
-
-# Load data from the Excel file
-filename = 'example_data.xlsx'
-data = load_data(filename)
-
-# Plot data for each sheet
-for sheet_name in data.keys():
-    plot_data(data, sheet_name)
+if __name__ == "__main__":
+    main()
