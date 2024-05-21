@@ -40,6 +40,22 @@ def plot_data(data, original_sheet_name, sanitized_sheet_name, fig_folder, png_f
     ax.plot(x_data, y_data.iloc[:, 3], label='LFL', color=colors[0], linewidth=2, linestyle='--')
     ax.plot(x_data, y_data.iloc[:, 4], label='UFL', color=colors[0], linewidth=2, linestyle='-')
 
+    # Add annotations for the 13th and 14th columns
+    ax.annotate(
+        'LFL: ' + y_headers[3],
+        xy=(x_data.iloc[-1], y_data.iloc[-1, 3]),
+        xytext=(x_data.iloc[-1], y_data.iloc[-1, 3] + 5),
+        arrowprops=dict(facecolor='black', arrowstyle='->'),
+        bbox=dict(boxstyle='round,pad=0.3', edgecolor='black', facecolor='white')
+    )
+    ax.annotate(
+        'UFL: ' + y_headers[4],
+        xy=(x_data.iloc[-1], y_data.iloc[-1, 4]),
+        xytext=(x_data.iloc[-1], y_data.iloc[-1, 4] + 5),
+        arrowprops=dict(facecolor='black', arrowstyle='->'),
+        bbox=dict(boxstyle='round,pad=0.3', edgecolor='black', facecolor='white')
+    )
+
     # Customize plot
     ax.set_xlabel('Time (hours)')
     ax.set_ylabel('Temperature')
