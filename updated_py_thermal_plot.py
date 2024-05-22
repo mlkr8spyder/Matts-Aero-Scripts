@@ -41,6 +41,42 @@ def reformat_sheet_name(sheet_name):
     else:
         return sheet_name
 
+import pandas as pd
+import matplotlib.pyplot as plt
+import os
+import json
+
+def sanitize_sheet_name(name):
+    return ''.join(e if e.isalnum() else '_' for e in name)
+
+def replace_strings_in_headers(headers, old_str, new_str):
+    return [header.replace(old_str, new_str) for header in headers]
+
+def reformat_sheet_name(sheet_name):
+    phrases = sheet_name.split(', ')
+    phrase_mapping = {
+        "run type": "Run Type",
+        "exp": "Experiment",
+        "test": "Test",
+        "day type": "Day Type",
+        "weekday": "Weekday",
+        "weekend": "Weekend",
+        "weekday%": "Weekday",
+        "weekend%": "Weekend",
+        "fluid type": "Fluid Type",
+        "grp1": "Group 1",
+        "grp2": "Group 2",
+        "grp3": "Group 3"
+        # Add more mappings as needed
+    }
+    
+    readable_phrases = [phrase_mapping.get(phrase, phrase) for phrase in phrases]
+    
+    if len(readable_phrases) >= 3:
+        return f"{readable_phrases[0]}: {readable_phrases[1]} for {readable_phrases[2]}"
+    else:
+        return sheet_name
+
 def plot_data(data, sheet_mapping, sanitized_sheet_name, fig_folder, png_folder):
     sheet_data = data[sanitized_sheet_name]
     original_sheet_name = sheet_mapping[sanitized_sheet_name]
@@ -65,7 +101,8 @@ def plot_data(data, sheet_mapping, sanitized_sheet_name, fig_folder, png_folder)
 
     # Read the ninth column and find the max value
     ninth_column_header = sheet_data.columns[8]
-    ninth_column_max = sheet_data.iloc[:, 8].max()
+    ninth_column_data = sheet_data.iloc[:, 8]
+    ninth_column_max = ninth_column_data.max()
 
     # Create a figure and set its size
     fig, ax = plt.subplots(figsize=(15, 8))
@@ -80,11 +117,13 @@ def plot_data(data, sheet_mapping, sanitized_sheet_name, fig_folder, png_folder)
     ax.plot(x_data, y_data.iloc[:, 3], label='LFL', color=colors[0], linewidth=2, linestyle='--')
     ax.plot(x_data, y_data.iloc[:, 4], label='UFL', color=colors[0], linewidth=2, linestyle='-')
 
+    # Calculate positions for annotations
     annotation_positions = {
-    "LFL": (x_data.iloc[len(x_data) // 2], y_data.iloc[len(y_data) // 2, 3]),
-    "UFL": (x_data.iloc[len(x_data) // 2], y_data.iloc[len(y_data) // 2, 4]),
-    "Max": (x_data.iloc[len(x_data) // 2], ninth_column_max)
+        "LFL": (x_data.iloc[len(x_data) // 2], y_data.iloc[len(y_data) // 2, 3]),
+        "UFL": (x_data.iloc[len(x_data) // 2], y_data.iloc[len(y_data) // 2, 4]),
+        "Max": (x_data.iloc[len(x_data) // 2], ninth_column_max)
     }
+
     # Add annotations for the 13th and 14th columns
     ax.annotate(
         f'LFL: {y_headers[3]}',
@@ -100,13 +139,24 @@ def plot_data(data, sheet_mapping, sanitized_sheet_name, fig_folder, png_folder)
         arrowprops=dict(facecolor='black', arrowstyle='->'),
         bbox=dict(boxstyle='round,pad=0.3', edgecolor='black', facecolor='white')
     )
-    ax.annotate(
-        f'Max {ninth_column_header}: {ninth_column_max}',
-        xy=(x_data.iloc[len(x_data) // 2], ninth_column_max),
-        xytext=(annotation_positions["Max"][0] + 2, annotation_positions["Max"][1] - 5),
-        arrowprops=dict(facecolor='blue', arrowstyle='->'),
-        bbox=dict(boxstyle='round,pad=0.3', edgecolor='blue', facecolor='white')
-    )
+
+    # Add annotation for the max value of the ninth column
+    if ninth_column_max != 0:
+        ax.annotate(
+            f'Max {ninth_column_header}: {ninth_column_max}',
+            xy=(x_data.iloc[len(x_data) // 2], ninth_column_max),
+            xytext=(annotation_positions["Max"][0] + 2, annotation_positions["Max"][1] - 5),
+            arrowprops=dict(facecolor='blue', arrowstyle='->'),
+            bbox=dict(boxstyle='round,pad=0.3', edgecolor='blue', facecolor='white')
+        )
+    else:
+        ax.annotate(
+            f'All {ninth_column_header} values are 0',
+            xy=(x_data.iloc[len(x_data) // 2], 0),
+            xytext=(annotation_positions["Max"][0] + 2, 5),
+            arrowprops=dict(facecolor='blue', arrowstyle='->'),
+            bbox=dict(boxstyle='round,pad=0.3', edgecolor='blue', facecolor='white')
+        )
 
     # Customize plot
     ax.set_xlabel('Time (hours)')
@@ -130,6 +180,24 @@ def plot_data(data, sheet_mapping, sanitized_sheet_name, fig_folder, png_folder)
     fig.savefig(os.path.join(png_folder, f'{fig_filename}.pdf'), bbox_extra_artists=(legend,), bbox_inches='tight')
 
     plt.close(fig)
+
+# Example main function
+def main():
+    # Load data from the JSON file
+    json_filename = 'data.json'
+    data, sheet_mapping = load_data_from_json(json_filename)
+
+    # Define folder paths
+    fig_folder = 'figures'
+    png_folder = 'exported_pngs'
+
+    # Plot data for each sheet
+    for sanitized_sheet_name in data.keys():
+        plot_data(data, sheet_mapping, sanitized_sheet_name, fig_folder, png_folder)
+
+if __name__ == "__main__":
+    main()
+
 
 # Example main function
 def main():
