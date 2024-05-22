@@ -80,29 +80,31 @@ def plot_data(data, sheet_mapping, sanitized_sheet_name, fig_folder, png_folder)
     ax.plot(x_data, y_data.iloc[:, 3], label='LFL', color=colors[0], linewidth=2, linestyle='--')
     ax.plot(x_data, y_data.iloc[:, 4], label='UFL', color=colors[0], linewidth=2, linestyle='-')
 
+    annotation_positions = {
+    "LFL": (x_data.iloc[len(x_data) // 2], y_data.iloc[len(y_data) // 2, 3]),
+    "UFL": (x_data.iloc[len(x_data) // 2], y_data.iloc[len(y_data) // 2, 4]),
+    "Max": (x_data.iloc[len(x_data) // 2], ninth_column_max)
+    }
     # Add annotations for the 13th and 14th columns
     ax.annotate(
-        'LFL: ' + y_headers[3],
-        xy=(x_data.iloc[-1], y_data.iloc[-1, 3]),
-        xytext=(x_data.iloc[-1], y_data.iloc[-1, 3] + 5),
+        f'LFL: {y_headers[3]}',
+        xy=(x_data.iloc[len(x_data) // 2], y_data.iloc[len(y_data) // 2, 3]),
+        xytext=(annotation_positions["LFL"][0] + 2, annotation_positions["LFL"][1] + 5),
         arrowprops=dict(facecolor='black', arrowstyle='->'),
         bbox=dict(boxstyle='round,pad=0.3', edgecolor='black', facecolor='white')
     )
     ax.annotate(
-        'UFL: ' + y_headers[4],
-        xy=(x_data.iloc[-1], y_data.iloc[-1, 4]),
-        xytext=(x_data.iloc[-1], y_data.iloc[-1, 4] + 5),
+        f'UFL: {y_headers[4]}',
+        xy=(x_data.iloc[len(x_data) // 2], y_data.iloc[len(y_data) // 2, 4]),
+        xytext=(annotation_positions["UFL"][0] + 2, annotation_positions["UFL"][1] + 10),
         arrowprops=dict(facecolor='black', arrowstyle='->'),
         bbox=dict(boxstyle='round,pad=0.3', edgecolor='black', facecolor='white')
     )
-
-    # Add annotation for the max value of the ninth column
     ax.annotate(
         f'Max {ninth_column_header}: {ninth_column_max}',
-        xy=(x_data.iloc[-1], ninth_column_max),
-        xytext=(x_data.iloc[-1], ninth_column_max + 5),
-        arrowprops=dict(facecolor='blue', arrowstyle='->'),
-        bbox=dict(boxstyle='round,pad=0.3', edgecolor='blue', facecolor='white')
+        xy=(x_data.iloc[len(x_data) // 2], ninth_column_max),
+        xytext=(annotation_positions["Max"][0] + 2, annotation_positions["Max"][1] - 5),
+        arrowprops=dict
     )
 
     # Customize plot
