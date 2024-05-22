@@ -1,0 +1,9 @@
+Location One
+(A2_123456AA2114-201 , material_one)
+(A2_123336AA2114-201 , material_two)
+(A2_12344456AA21314-203 , material_three)
+
+Location Two
+(A2_123456AA21714-201 , material_one)
+(A2_123336AA21174-201 , material_one)
+(A2_12344456AA21374-203 , material_two)

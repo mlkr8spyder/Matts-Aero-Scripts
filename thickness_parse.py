@@ -2,7 +2,6 @@ def parse_file(file_path):
     import re
 
     with open(file_path, 'r') as file:
-
         lines = file.readlines()
     
     part_data = {}
