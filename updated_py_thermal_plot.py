@@ -141,22 +141,20 @@ def plot_data(data, sheet_mapping, sanitized_sheet_name, fig_folder, png_folder)
     )
 
     # Add annotation for the max value of the ninth column
+# Add annotation for the max value of the ninth column
     if ninth_column_max != 0:
         ax.annotate(
             f'Max {ninth_column_header}: {ninth_column_max}',
-            xy=(x_data.iloc[len(x_data) // 2], ninth_column_max),
-            xytext=(annotation_positions["Max"][0] + 2, annotation_positions["Max"][1] - 5),
-            arrowprops=dict(facecolor='blue', arrowstyle='->'),
+            xy=(0.95, 0.9), xycoords='axes fraction',
             bbox=dict(boxstyle='round,pad=0.3', edgecolor='blue', facecolor='white')
         )
     else:
         ax.annotate(
             f'All {ninth_column_header} values are 0',
-            xy=(x_data.iloc[len(x_data) // 2], 0),
-            xytext=(annotation_positions["Max"][0] + 2, 5),
-            arrowprops=dict(facecolor='blue', arrowstyle='->'),
+            xy=(0.95, 0.9), xycoords='axes fraction',
             bbox=dict(boxstyle='round,pad=0.3', edgecolor='blue', facecolor='white')
         )
+
 
     # Customize plot
     ax.set_xlabel('Time (hours)')
