@@ -128,24 +128,27 @@ def plot_data(data, sheet_mapping, sanitized_sheet_name, fig_folder, png_folder)
     ax.annotate(
         f'LFL: {y_headers[3]}',
         xy=(x_data.iloc[0], y_data.iloc[0, 3]),
-        xytext=(0.05, 0.5), textcoords='axes fraction',
+        xytext=(x_data.iloc[0] - (x_data.max() - x_data.min()) * 0.05, y_data.iloc[0, 3]),
+        textcoords='data',
         arrowprops=dict(facecolor='black', arrowstyle='->'),
         bbox=dict(boxstyle='round,pad=0.3', edgecolor='black', facecolor='white')
     )
     ax.annotate(
         f'UFL: {y_headers[4]}',
         xy=(x_data.iloc[0], y_data.iloc[0, 4]),
-        xytext=(0.05, 0.6), textcoords='axes fraction',
+        xytext=(x_data.iloc[0] - (x_data.max() - x_data.min()) * 0.05, y_data.iloc[0, 4]),
+        textcoords='data',
         arrowprops=dict(facecolor='black', arrowstyle='->'),
         bbox=dict(boxstyle='round,pad=0.3', edgecolor='black', facecolor='white')
     )
-
+    # Add annotation for the max value of the ninth column
+    # Calculate max value, round it to two decimal places, and convert to percentage
+    ninth_column_max = round(ninth_column_max * 100, 2)
 
     # Add annotation for the max value of the ninth column
-# Add annotation for the max value of the ninth column
     if ninth_column_max != 0:
         ax.annotate(
-            f'Max {ninth_column_header}: {ninth_column_max}',
+            f'Max {ninth_column_header}: {ninth_column_max}%',
             xy=(0.5, 0.95), xycoords='axes fraction',
             ha='center',
             bbox=dict(boxstyle='round,pad=0.3', edgecolor='blue', facecolor='white')
@@ -157,6 +160,7 @@ def plot_data(data, sheet_mapping, sanitized_sheet_name, fig_folder, png_folder)
             ha='center',
             bbox=dict(boxstyle='round,pad=0.3', edgecolor='blue', facecolor='white')
         )
+
 
 
     # Customize plot
