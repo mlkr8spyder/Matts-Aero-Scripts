@@ -104,7 +104,8 @@ def plot_data(data, sheet_mapping, sanitized_sheet_name, fig_folder, png_folder)
         f'Max {ninth_column_header}: {ninth_column_max}',
         xy=(x_data.iloc[len(x_data) // 2], ninth_column_max),
         xytext=(annotation_positions["Max"][0] + 2, annotation_positions["Max"][1] - 5),
-        arrowprops=dict
+        arrowprops=dict(facecolor='blue', arrowstyle='->'),
+        bbox=dict(boxstyle='round,pad=0.3', edgecolor='blue', facecolor='white')
     )
 
     # Customize plot
