@@ -127,31 +127,34 @@ def plot_data(data, sheet_mapping, sanitized_sheet_name, fig_folder, png_folder)
     # Add annotations for the 13th and 14th columns
     ax.annotate(
         f'LFL: {y_headers[3]}',
-        xy=(x_data.iloc[len(x_data) // 2], y_data.iloc[len(y_data) // 2, 3]),
-        xytext=(annotation_positions["LFL"][0] + 2, annotation_positions["LFL"][1] + 5),
+        xy=(x_data.iloc[0], y_data.iloc[0, 3]),
+        xytext=(0.05, 0.5), textcoords='axes fraction',
         arrowprops=dict(facecolor='black', arrowstyle='->'),
         bbox=dict(boxstyle='round,pad=0.3', edgecolor='black', facecolor='white')
     )
     ax.annotate(
         f'UFL: {y_headers[4]}',
-        xy=(x_data.iloc[len(x_data) // 2], y_data.iloc[len(y_data) // 2, 4]),
-        xytext=(annotation_positions["UFL"][0] + 2, annotation_positions["UFL"][1] + 10),
+        xy=(x_data.iloc[0], y_data.iloc[0, 4]),
+        xytext=(0.05, 0.6), textcoords='axes fraction',
         arrowprops=dict(facecolor='black', arrowstyle='->'),
         bbox=dict(boxstyle='round,pad=0.3', edgecolor='black', facecolor='white')
     )
+
 
     # Add annotation for the max value of the ninth column
 # Add annotation for the max value of the ninth column
     if ninth_column_max != 0:
         ax.annotate(
             f'Max {ninth_column_header}: {ninth_column_max}',
-            xy=(0.95, 0.9), xycoords='axes fraction',
+            xy=(0.5, 0.95), xycoords='axes fraction',
+            ha='center',
             bbox=dict(boxstyle='round,pad=0.3', edgecolor='blue', facecolor='white')
         )
     else:
         ax.annotate(
             f'All {ninth_column_header} values are 0',
-            xy=(0.95, 0.9), xycoords='axes fraction',
+            xy=(0.5, 0.95), xycoords='axes fraction',
+            ha='center',
             bbox=dict(boxstyle='round,pad=0.3', edgecolor='blue', facecolor='white')
         )
 
