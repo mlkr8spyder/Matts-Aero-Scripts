@@ -69,3 +69,23 @@ def generate_plot(self):
         plt.show()
     except Exception as e:
         messagebox.showerror("Error", str(e))
+        
+def update_columns(self):
+    if self.df_combined is not None:
+        columns = self.df_combined.columns.tolist()
+    else:
+        columns = []
+
+    self.x_menu['menu'].delete(0, 'end')
+    self.y_menu['menu'].delete(0, 'end')
+
+    for col in columns:
+        self.x_menu['menu'].add_command(label=col, command=lambda value=col: self.x_column.set(value))
+        self.y_menu['menu'].add_command(label=col, command=lambda value=col: self.y_column.set(value))
+
+    if columns:
+        self.x_column.set(columns[0])
+        self.y_column.set(columns[1])
+    else:
+        self.x_column.set('')
+        self.y_column.set('')
