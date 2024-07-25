@@ -83,15 +83,27 @@ class DataPlotterApp:
             file_name = self.file_entry.get()
             full_path = self.file_path + "/" + file_name + ".txt"
             self.df_combined = pd.read_csv(full_path, delim_whitespace=True)
+            
+            # Interpolate non-numeric values
+            for col in self.df_combined.columns:
+                self.df_combined[col] = pd.to_numeric(self.df_combined[col], errors='coerce')
+                self.df_combined[col].interpolate(method='linear', inplace=True)
+            
             self.update_columns()
         except Exception as e:
             messagebox.showerror("Error", str(e))
+
 
     def add_file(self):
         try:
             file_name = self.file_entry.get()
             full_path = self.file_path + "/" + file_name + ".txt"
             df_new = pd.read_csv(full_path, delim_whitespace=True)
+            
+            # Interpolate non-numeric values
+            for col in df_new.columns:
+                df_new[col] = pd.to_numeric(df_new[col], errors='coerce')
+                df_new[col].interpolate(method='linear', inplace=True)
             
             # Remove duplicate columns
             duplicate_columns = [col for col in df_new.columns if col in self.df_combined.columns]
