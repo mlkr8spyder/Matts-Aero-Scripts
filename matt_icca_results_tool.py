@@ -38,7 +38,12 @@ class DataPlotterApp:
         self.add_file_button.grid(row=1, column=2)
 
         self.save_df_button = Button(self.data_tab, text="Save DataFrame", command=self.save_dataframe)
-        self.save_df_button.grid(row=2, column=2)
+        self.save_df_button.grid(row=3, column=1)
+        
+        self.plot_title = "Combined Plot"
+        self.x_axis_label = "X-axis"
+        self.y_axis_label = "Y-axis"
+        self.y2_axis_label = "Y2-axis"
         
         # Plot tab
         self.x_label = Label(self.plot_tab, text="X-axis Column:")
@@ -76,10 +81,26 @@ class DataPlotterApp:
         self.generate_plot_button.grid(row=5, column=1)
         
         self.save_plot_button = Button(self.plot_tab, text="Save Plot", command=self.save_plot)
-        self.save_plot_button.grid(row=6, column=1)
+        self.save_plot_button.grid(row=4, column=0)
 
         self.clear_plot_button = Button(self.plot_tab, text="Clear Plot", command=self.clear_plot)
-        self.clear_plot_button.grid(row=7, column=1)
+        self.clear_plot_button.grid(row=5, column=0)
+        
+        self.rename_label = Label(self.plot_tab, text="Select element to rename:")
+        self.rename_label.grid(row=8, column=0)
+
+        self.rename_option = StringVar()
+        self.rename_option_menu = OptionMenu(self.plot_tab, self.rename_option, "Title", "X-axis", "Y-axis", "Y2-axis")
+        self.rename_option_menu.grid(row=8, column=1)
+
+        self.rename_entry_label = Label(self.plot_tab, text="New name:")
+        self.rename_entry_label.grid(row=9, column=0)
+
+        self.rename_entry = Entry(self.plot_tab)
+        self.rename_entry.grid(row=9, column=1)
+
+        self.rename_button = Button(self.plot_tab, text="Rename", command=self.rename_element)
+        self.rename_button.grid(row=9, column=2)
         
     def load_file(self):
         try:
@@ -153,20 +174,20 @@ class DataPlotterApp:
             for (x_col, y_col, x_units, y_units) in self.plot_data:
                 if y_units == primary_y_units:
                     ax1.plot(self.df_combined[x_col], self.df_combined[y_col], label=f'{y_col} ({y_units})')
-                    ax1.set_xlabel(f'{x_col} ({x_units})')
-                    ax1.set_ylabel(f'{self.plot_data[0][1]} ({primary_y_units})')
+                    ax1.set_xlabel(f'{self.x_axis_label} ({x_units})')
+                    ax1.set_ylabel(f'{self.y_axis_label} ({primary_y_units})')
                 else:
                     if not ax2:
                         ax2 = ax1.twinx()
                         secondary_y = True
                     ax2.plot(self.df_combined[x_col], self.df_combined[y_col], label=f'{y_col} ({y_units})', linestyle='dashed')
-                    ax2.set_ylabel(f'{y_col} ({y_units})')
+                    ax2.set_ylabel(f'{self.y2_axis_label} ({y_units})')
             
             ax1.legend(loc='upper left')
             if ax2:
                 ax2.legend(loc='upper right')
 
-            plt.title('Combined Plot')
+            plt.title(self.plot_title)
             plt.grid(True)
             plt.show()
         except Exception as e:
@@ -176,6 +197,25 @@ class DataPlotterApp:
         self.plot_data = []  # Reset the plot data
         plt.close('all')  # Close all matplotlib figures
         messagebox.showinfo("Info", "Plot cleared")
+    
+    def rename_element(self):
+        element = self.rename_option.get()
+        new_name = self.rename_entry.get()
+        
+        if not new_name:
+            messagebox.showerror("Error", "New name cannot be empty")
+            return
+        
+        if element == "Title":
+            self.plot_title = new_name
+        elif element == "X-axis":
+            self.x_axis_label = new_name
+        elif element == "Y-axis":
+            self.y_axis_label = new_name
+        elif element == "Y2-axis":
+            self.y2_axis_label = new_name
+        
+        messagebox.showinfo("Info", f"{element} renamed to {new_name}")
     
     def save_dataframe(self):
         try:
