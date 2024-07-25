@@ -1,12 +1,20 @@
-# Add these lines in the __init__ method, inside the data_tab section
+# Add these lines in the __init__ method, inside the plot_tab section
 
-# Time scale label and entry
-self.time_scale_label = Label(self.data_tab, text="Time Scale:")
-self.time_scale_label.grid(row=3, column=0)
+# Start time label and entry
+self.start_time_label = Label(self.plot_tab, text="Start Time:")
+self.start_time_label.grid(row=11, column=0)
 
-self.time_scale = StringVar()
-self.time_scale_entry = Entry(self.data_tab, textvariable=self.time_scale)
-self.time_scale_entry.grid(row=3, column=1)
+self.start_time = StringVar()
+self.start_time_entry = Entry(self.plot_tab, textvariable=self.start_time)
+self.start_time_entry.grid(row=11, column=1)
+
+# End time label and entry
+self.end_time_label = Label(self.plot_tab, text="End Time:")
+self.end_time_label.grid(row=12, column=0)
+
+self.end_time = StringVar()
+self.end_time_entry = Entry(self.plot_tab, textvariable=self.end_time)
+self.end_time_entry.grid(row=12, column=1)
 
 # Reset data button
 self.reset_data_button = Button(self.data_tab, text="Reset Data", command=self.reset_data)
@@ -19,11 +27,21 @@ def reset_data(self):
 
 def generate_plot(self):
     try:
-        time_scale = self.time_scale.get()
-        if time_scale:
-            time_scale = float(time_scale)
+        start_time = self.start_time.get()
+        end_time = self.end_time.get()
+
+        if start_time:
+            start_time = float(start_time)
         else:
-            time_scale = 1.0  # Default time scale
+            start_time = self.df_combined['Time'].min()  # Default to min time
+
+        if end_time:
+            end_time = float(end_time)
+        else:
+            end_time = self.df_combined['Time'].max()  # Default to max time
+
+        # Filter the dataframe based on the specified time range
+        df_filtered = self.df_combined[(self.df_combined['Time'] >= start_time) & (self.df_combined['Time'] <= end_time)]
 
         fig, ax1 = plt.subplots(figsize=(10, 6))
         ax2 = None
@@ -31,16 +49,15 @@ def generate_plot(self):
         primary_y_units = self.plot_data[0][3]
 
         for (x_col, y_col, x_units, y_units) in self.plot_data:
-            x_data = self.df_combined[x_col] * time_scale  # Apply the time scale
             if y_units == primary_y_units:
-                ax1.plot(x_data, self.df_combined[y_col], label=f'{y_col} ({y_units})')
+                ax1.plot(df_filtered[x_col], df_filtered[y_col], label=f'{y_col} ({y_units})')
                 ax1.set_xlabel(f'{self.x_axis_label} ({x_units})')
                 ax1.set_ylabel(f'{self.y_axis_label} ({primary_y_units})')
             else:
                 if not ax2:
                     ax2 = ax1.twinx()
                     secondary_y = True
-                ax2.plot(x_data, self.df_combined[y_col], label=f'{y_col} ({y_units})', linestyle='dashed')
+                ax2.plot(df_filtered[x_col], df_filtered[y_col], label=f'{y_col} ({y_units})', linestyle='dashed')
                 ax2.set_ylabel(f'{self.y2_axis_label} ({y_units})')
         
         ax1.legend(loc='upper left')
