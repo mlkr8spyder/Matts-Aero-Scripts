@@ -78,6 +78,9 @@ class DataPlotterApp:
         self.save_plot_button = Button(self.plot_tab, text="Save Plot", command=self.save_plot)
         self.save_plot_button.grid(row=6, column=1)
 
+        self.clear_plot_button = Button(self.plot_tab, text="Clear Plot", command=self.clear_plot)
+        self.clear_plot_button.grid(row=7, column=1)
+        
     def load_file(self):
         try:
             file_name = self.file_entry.get()
@@ -168,7 +171,12 @@ class DataPlotterApp:
             plt.show()
         except Exception as e:
             messagebox.showerror("Error", str(e))
-
+    
+    def clear_plot(self):
+        self.plot_data = []  # Reset the plot data
+        plt.close('all')  # Close all matplotlib figures
+        messagebox.showinfo("Info", "Plot cleared")
+    
     def save_dataframe(self):
         try:
             folder_path = os.path.join(self.file_path, "Post_Processing")
