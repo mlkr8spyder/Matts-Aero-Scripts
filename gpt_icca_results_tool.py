@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from tkinter import Tk, Label, Entry, Button, StringVar, OptionMenu, filedialog, messagebox
+import os
 
 class DataPlotterApp:
     def __init__(self, master):
@@ -61,6 +62,14 @@ class DataPlotterApp:
         self.plot_button = Button(master, text="Generate Plot", command=self.generate_plot)
         self.plot_button.grid(row=6, column=1)
 
+        # Save dataframe button
+        self.save_df_button = Button(master, text="Save DataFrame", command=self.save_dataframe)
+        self.save_df_button.grid(row=7, column=1)
+
+        # Save plot button
+        self.save_plot_button = Button(master, text="Save Plot", command=self.save_plot)
+        self.save_plot_button.grid(row=8, column=1)
+
     def load_file(self):
         try:
             file_name = self.file_entry.get()
@@ -116,6 +125,43 @@ class DataPlotterApp:
             plt.legend()
             plt.grid(True)
             plt.show()
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def save_dataframe(self):
+        try:
+            folder_path = os.path.join(self.file_path, "Post_Processing")
+            os.makedirs(folder_path, exist_ok=True)
+            file_name = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
+            if file_name:
+                save_path = os.path.join(folder_path, os.path.basename(file_name))
+                self.df_combined.to_excel(save_path, index=False)
+                messagebox.showinfo("Success", f"DataFrame saved as {save_path}")
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def save_plot(self):
+        try:
+            folder_path = os.path.join(self.file_path, "Post_Processing")
+            os.makedirs(folder_path, exist_ok=True)
+            file_name = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG files", "*.png")])
+            if file_name:
+                save_path = os.path.join(folder_path, os.path.basename(file_name))
+                x_col = self.x_column.get()
+                y_col = self.y_column.get()
+                x_units = self.x_units.get()
+                y_units = self.y_units.get()
+                
+                plt.figure(figsize=(10, 6))
+                plt.plot(self.df_combined[x_col], self.df_combined[y_col], label=f'{y_col} vs {x_col}')
+                plt.xlabel(f'{x_col} ({x_units})')
+                plt.ylabel(f'{y_col} ({y_units})')
+                plt.title(f'{y_col} vs {x_col}')
+                plt.legend()
+                plt.grid(True)
+                plt.savefig(save_path)
+                plt.close()
+                messagebox.showinfo("Success", f"Plot saved as {save_path}")
         except Exception as e:
             messagebox.showerror("Error", str(e))
 
