@@ -13,7 +13,14 @@ def extract_phrases_from_brackets(file_path):
     
     return unique_phrases
 
+def write_phrases_to_file(phrases, output_path):
+    with open(output_path, 'w') as file:
+        for phrase in phrases:
+            file.write(f"{phrase}\n")
+
 # Example usage
-file_path = 'your_file.txt'  # Replace with the path to your text file
-phrases = extract_phrases_from_brackets(file_path)
-print(phrases)
+input_file_path = 'your_file.txt'  # Replace with the path to your input text file
+output_file_path = 'output_phrases.txt'  # Replace with the desired path for the output text file
+
+phrases = extract_phrases_from_brackets(input_file_path)
+write_phrases_to_file(phrases, output_file_path)
