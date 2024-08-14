@@ -17,6 +17,9 @@ resampled_df = df.resample('100ms').mean()
 # Reset the index to get 'time' back as a column
 resampled_df.reset_index(inplace=True)
 
+# Convert the datetime format back to seconds
+resampled_df['time'] = resampled_df['time'].dt.second + resampled_df['time'].dt.microsecond / 1e6
+
 # Save the resampled data to a new CSV file
 resampled_df.to_csv("resampled_data.csv", index=False)
 
