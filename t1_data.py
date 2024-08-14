@@ -1,26 +1,35 @@
 import pandas as pd
-import numpy as np
+import matplotlib.pyplot as plt
 
-# Load CSV file
-file_path = "your_file.csv"  # Replace with your file path
-df = pd.read_csv(file_path)
+# Load the resampled data
+resampled_df = pd.read_csv("resampled_data.csv")
 
-# Convert the time column to a pandas datetime format (assuming time is in seconds)
-df['time'] = pd.to_datetime(df['time'], unit='s')
+# Normalize the time column by subtracting the first time value
+resampled_df['time'] = resampled_df['time'] - resampled_df['time'].iloc[0]
 
-# Set the time as the DataFrame index
-df.set_index('time', inplace=True)
+# Define the threshold value for filtering
+threshold_value = 10  # Replace with your desired threshold
 
-# Resample the data to 0.1-second intervals and calculate the mean for each parameter
-resampled_df = df.resample('100ms').mean()
+# Filter out rows where the value in 'column2' exceeds the threshold
+filtered_df = resampled_df[resampled_df['column2'] <= threshold_value]
 
-# Reset the index to get 'time' back as a column
-resampled_df.reset_index(inplace=True)
+# Save the filtered data to a new CSV file
+filtered_df.to_csv("filtered_data.csv", index=False)
 
-# Convert the datetime format back to seconds
-resampled_df['time'] = resampled_df['time'].dt.second + resampled_df['time'].dt.microsecond / 1e6
+# Plot each parameter over time from the filtered DataFrame
+plt.figure(figsize=(10, 6))
 
-# Save the resampled data to a new CSV file
-resampled_df.to_csv("resampled_data.csv", index=False)
+for column in filtered_df.columns:
+    if column != 'time':  # Exclude the time column from plotting
+        plt.plot(filtered_df['time'], filtered_df[column], label=column)
 
-print("Resampled data saved to resampled_data.csv")
+plt.xlabel('Time (seconds)')
+plt.ylabel('Parameter Value')
+plt.title('Filtered Parameters over Normalized Time')
+plt.legend()
+plt.grid(True)
+
+# Show the plot
+plt.show()
+
+print("Filtered data saved to filtered_data.csv")
