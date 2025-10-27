@@ -1,0 +1,101 @@
+function plot_run_with_events(T_clean, Map, events_by_run, test_day, attempt)
+% Pick + plot signals by PrettyName, then overlay event markers.
+
+    %-------------------------------------------------------------
+    % 1. Build a seconds-from-start timeline for plotting
+    %    (works whether Time is duration, datetime, or numeric)
+    %-------------------------------------------------------------
+    timeData = T_clean.Time;
+
+    if isdatetime(timeData)
+        t0 = timeData(1);
+        t_plot = seconds(timeData - t0); % numeric seconds since start
+    elseif isduration(timeData)
+        t_plot = seconds(timeData - timeData(1));
+    else
+        % assume already numeric seconds, but shift so it starts at 0
+        t_plot = timeData - timeData(1);
+    end
+
+    %-------------------------------------------------------------
+    % 2. Let user choose which signals to plot by PrettyName
+    %-------------------------------------------------------------
+    pretty_list = string(Map.PrettyName);  % human-facing labels
+    [idx_selected, ok] = listdlg( ...
+        'PromptString','Select parameters to plot:', ...
+        'ListString', pretty_list, ...
+        'SelectionMode','multiple');
+
+    if ~ok || isempty(idx_selected)
+        disp('No signals selected. Exiting plot.');
+        return;
+    end
+
+    % We'll grab the matching VarNames
+    var_list = Map.VarName(idx_selected);
+
+    %-------------------------------------------------------------
+    % 3. Resolve which event set to use for this run
+    %-------------------------------------------------------------
+    run_key = sprintf('D%d_A%d', test_day, attempt);
+
+    have_events = isfield(events_by_run, run_key);
+    if have_events
+        ev_times = events_by_run.(run_key).t_sec;   % [s from start]
+        ev_names = events_by_run.(run_key).name;    % labels
+    else
+        ev_times = [];
+        ev_names = strings(0,1);
+        warning('No events found for Day %d Attempt %d', test_day, attempt);
+    end
+
+    %-------------------------------------------------------------
+    % 4. Generate the plot
+    %   If you pick multiple signals, we’ll stack them in subplots.
+    %   (Cleaner than smashing very different units on one axis.)
+    %-------------------------------------------------------------
+    nSig = numel(var_list);
+    figure;
+    tiledlayout(nSig,1,"TileSpacing","compact");
+
+    for s = 1:nSig
+        varName_s   = var_list{s};
+        pretty_s    = Map.PrettyName(idx_selected(s));
+        ax = nexttile;
+
+        if ~ismember(varName_s, T_clean.Properties.VariableNames)
+            warning('Variable %s not found in T_clean. Skipping.', varName_s);
+            continue;
+        end
+
+        ydata = T_clean.(varName_s);
+        plot(ax, t_plot, ydata, 'LineWidth', 1.2);
+        hold(ax,'on');
+
+        %---------------------------------------------------------
+        % 5. Overlay event markers for this run
+        %---------------------------------------------------------
+        for e = 1:numel(ev_times)
+            xline(ax, ev_times(e), '--', 'LineWidth', 1.0);
+            % Drop text slightly above the current axis limits
+            yl = ylim(ax);
+            y_text = yl(2) - 0.05*(yl(2)-yl(1));
+            text(ax, ev_times(e), y_text, ev_names(e), ...
+                'HorizontalAlignment','left', ...
+                'VerticalAlignment','top', ...
+                'FontSize',8, ...
+                'Rotation',0, ...
+                'Interpreter','none');  % don't parse underscores, etc.
+        end
+
+        grid(ax,'on');
+        ylabel(ax, pretty_s, 'Interpreter','none');
+        if s == nSig
+            xlabel(ax, 'Time from start [s]');
+        else
+            set(ax,'XTickLabel',[]) % hide x tick labels on middle plots
+        end
+        title(ax, sprintf('Day %d Attempt %d', test_day, attempt), ...
+              'Interpreter','none');
+    end
+end
