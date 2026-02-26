@@ -1,0 +1,19 @@
+import h5py
+
+def print_structure(name, obj):
+    if isinstance(obj, h5py.Dataset):
+        print(f"DATASET: {name} | shape: {obj.shape} | dtype: {obj.dtype}")
+    elif isinstance(obj, h5py.Group):
+        print(f"GROUP:   {name}")
+
+with h5py.File('your_file.h5', 'r') as f:
+    f.visititems(print_structure)
+```
+
+`visititems` walks every item in the file and calls your function on each one. You'll get output something like:
+```
+GROUP:   /simulation
+DATASET: /simulation/pressure | shape: (100, 50) | dtype: float64
+DATASET: /simulation/velocity | shape: (100, 50, 3) | dtype: float64
+GROUP:   /metadata
+DATASET: /metadata/timestamps | shape: (100,) | dtype: float32
