@@ -1,0 +1,24 @@
+<VVVV1><SSSSS.XXX><AAA>B:####:CCCCCC:...
+
+First term bounded by < > and can be any length.
+
+Second term bounded by < > is the time in seconds. It can only be that length, if the time is less than 5 digits than there are leading white spaces
+
+Third term bounded by < > is The type of log output the message is 
+
+After that is a letter, either A or B which talks to the source of the output log
+
+Then there is a colon
+
+Next is a hexedecimal number that is always 4 bits. I think this helps organize the time in some way
+
+Then there is a colon
+
+Then CCCCCC is the system the message relates to, it can be up to 6 characters in length. If its shorter than 6, there are trailing whitespaces.
+
+Then there is a colon and a whitespace
+
+Lastly is the message. Most messages start right after the whitespace, but some have 7 whitespaces before they start showing text.
+
+I want to establish the script that parses these out into a more readable and filterable format.
+

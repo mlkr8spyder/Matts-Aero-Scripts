@@ -330,5 +330,4 @@ Matts-Aero-Scripts/
 ---
 
 **Last Updated**: February 2026
-**Organized by**: Claude Code
 
