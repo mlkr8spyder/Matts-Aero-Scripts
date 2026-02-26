@@ -17,3 +17,19 @@ DATASET: /simulation/pressure | shape: (100, 50) | dtype: float64
 DATASET: /simulation/velocity | shape: (100, 50, 3) | dtype: float64
 GROUP:   /metadata
 DATASET: /metadata/timestamps | shape: (100,) | dtype: float32
+
+def print_tree(filename):
+    """Print HDF5 file structure as a tree."""
+    def _tree(name, obj, prefix=""):
+        parts = name.split("/")
+        depth = len(parts) - 1
+        indent = "    " * depth
+        connector = "├── " if depth > 0 else ""
+        if isinstance(obj, h5py.Dataset):
+            print(f"{indent}{connector}{parts[-1]}  [{obj.shape}, {obj.dtype}]")
+        elif isinstance(obj, h5py.Group):
+            print(f"{indent}{connector}{parts[-1]}/")
+
+    with h5py.File(filename, 'r') as f:
+        print(f"{filename}/")
+        f.visititems(_tree)
