@@ -17,6 +17,8 @@ Fields:
 import re
 import sys
 import argparse
+import tkinter as tk
+from tkinter import filedialog
 import pandas as pd
 from pathlib import Path
 
@@ -100,9 +102,21 @@ def filter_df(df: pd.DataFrame,
     return out
 
 
+def select_file() -> Path | None:
+    """Open a file dialog and return the selected path, or None if cancelled."""
+    root = tk.Tk()
+    root.withdraw()
+    filepath = filedialog.askopenfilename(
+        title="Select a log file",
+        filetypes=[("Text/Log files", "*.txt *.log"), ("All files", "*.*")],
+    )
+    root.destroy()
+    return Path(filepath) if filepath else None
+
+
 def main():
     parser = argparse.ArgumentParser(description="Parse structured log files into CSV / DataFrame.")
-    parser.add_argument("logfile", help="Path to the log file")
+    parser.add_argument("logfile", nargs="?", default=None, help="Path to the log file (opens file picker if omitted)")
     parser.add_argument("-o", "--output", help="Output CSV path (default: <logfile>_parsed.csv)")
     parser.add_argument("--system", help="Filter to a specific system name")
     parser.add_argument("--source", choices=["A", "B"], help="Filter by source (A or B)")
@@ -110,7 +124,14 @@ def main():
     parser.add_argument("--keyword", help="Filter messages containing this keyword")
     args = parser.parse_args()
 
-    logpath = Path(args.logfile)
+    if args.logfile:
+        logpath = Path(args.logfile)
+    else:
+        logpath = select_file()
+        if not logpath:
+            print("No file selected.")
+            sys.exit(0)
+
     if not logpath.is_file():
         print(f"Error: file not found — {logpath}")
         sys.exit(1)
