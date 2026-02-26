@@ -82,7 +82,6 @@ def parse_log(filepath: str | Path) -> pd.DataFrame:
     if not df.empty:
         # Reorder columns
         df = df[["line_num", "time_s", "term1", "logtype", "source", "hex", "system", "message"]]
-        df.sort_values("time_s", inplace=True, ignore_index=True)
     return df
 
 
