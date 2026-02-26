@@ -14,6 +14,8 @@ Fields:
     message — free-text (some lines indented 7 extra spaces)
 """
 
+from __future__ import annotations
+
 import re
 import sys
 import argparse
