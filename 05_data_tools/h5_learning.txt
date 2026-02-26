@@ -33,3 +33,66 @@ def print_tree(filename):
     with h5py.File(filename, 'r') as f:
         print(f"{filename}/")
         f.visititems(_tree)
+
+import h5py
+import ipywidgets as widgets
+from IPython.display import display
+
+def h5_selector(filename):
+    """
+    Interactive tree widget for selecting HDF5 datasets.
+    Returns a function get_selected() to retrieve chosen paths.
+    """
+    checkboxes = {}  # path -> Checkbox widget
+
+    def build_tree(group, depth=0):
+        items = []
+        for key in group.keys():
+            obj = group[key]
+            path = obj.name
+
+            if isinstance(obj, h5py.Dataset):
+                cb = widgets.Checkbox(
+                    value=False,
+                    description=f"{key}  [{obj.shape}, {obj.dtype}]",
+                    indent=False,
+                    layout=widgets.Layout(width='600px')
+                )
+                checkboxes[path] = cb
+                items.append(widgets.HBox([
+                    widgets.Label("    " * depth),
+                    cb
+                ]))
+
+            elif isinstance(obj, h5py.Group):
+                children = build_tree(obj, depth + 1)
+                accordion = widgets.Accordion(children=[widgets.VBox(children)])
+                accordion.set_title(0, key)
+                accordion.selected_index = None  # collapsed by default
+                items.append(widgets.HBox([
+                    widgets.Label("    " * depth),
+                    accordion
+                ]))
+
+        return items
+
+    with h5py.File(filename, 'r') as f:
+        tree_items = build_tree(f)
+
+    display(widgets.VBox(tree_items))
+
+    def get_selected():
+        return [path for path, cb in checkboxes.items() if cb.value]
+
+    return get_selected
+
+
+# --- Usage ---
+get_selected = h5_selector("flight_data.h5")
+
+# After checking your boxes, run this cell to get the paths:
+selected = get_selected()
+print(selected)
+
+# Then pipe directly into subset:
+subset_h5("flight_data.h5", "subset.h5", selected)
