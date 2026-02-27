@@ -108,6 +108,78 @@ def mie_parabolic(x_fuel, lel, uel):
 
 
 # =========================================================================
+#  FUEL VOLUME FOR FLAMMABILITY
+# =========================================================================
+def fuel_volume_for_flammability(T_C, alt_m, V_bay,
+                                  LEL_SL_pct=0.6, UEL_SL_pct=4.7):
+    """
+    Compute the volume of liquid fuel that must fully evaporate into a sealed
+    bay to bring the vapor concentration to the LEL and UEL boundaries.
+
+    This gives the minimum liquid fuel volume to create a flammable mixture
+    and the maximum before exceeding the upper limit.
+
+    Parameters
+    ----------
+    T_C        : float — bay temperature [°C]
+    alt_m      : float — altitude [m]
+    V_bay      : float — total bay volume [m³]
+    LEL_SL_pct : float — lower explosive limit at sea level [vol %]
+    UEL_SL_pct : float — upper explosive limit at sea level [vol %]
+
+    Returns
+    -------
+    dict with keys:
+        T_K, P_amb, rho_liq, LEL_alt, UEL_alt,
+        n_fuel_LEL, m_fuel_LEL, V_liq_LEL_mL,
+        n_fuel_UEL, m_fuel_UEL, V_liq_UEL_mL,
+        n_fuel_stoich, m_fuel_stoich, V_liq_stoich_mL
+    """
+    T_K    = T_C + 273.15
+    P_amb  = ambient_pressure(alt_m)
+    rho_liq = liquid_fuel_density(T_K)
+
+    # Altitude-corrected flammability limits (constant partial-pressure model)
+    LEL_alt = (LEL_SL_pct / 100.0) * P0 / P_amb
+    UEL_alt = (UEL_SL_pct / 100.0) * P0 / P_amb
+
+    results = {
+        'T_K': T_K, 'T_C': T_C, 'alt_m': alt_m,
+        'P_amb': P_amb, 'rho_liq': rho_liq,
+        'LEL_alt': LEL_alt, 'UEL_alt': UEL_alt,
+    }
+
+    # For each threshold (LEL, stoichiometric, UEL), compute the liquid fuel
+    # volume whose complete evaporation yields that mole fraction.
+    #
+    # In a sealed bay of volume V_bay at pressure P_amb and temperature T:
+    #   n_total = P_amb * V_bay / (R_U * T)     (total moles of gas)
+    #   X_fuel  = n_fuel / n_total
+    #   => n_fuel = X_fuel * n_total
+    #   => m_fuel = n_fuel * M_FUEL
+    #   => V_liquid = m_fuel / rho_liq
+    #
+    # Note: this is conservative (upper bound) because it assumes the gas
+    # volume equals V_bay.  In reality the liquid pool occupies some volume,
+    # but the pool volume is negligible compared to the bay for these
+    # concentrations.
+
+    n_total = P_amb * V_bay / (R_U * T_K)
+
+    for tag, X_target in [('LEL', LEL_alt), ('stoich', X_STOICH),
+                           ('UEL', UEL_alt)]:
+        n_fuel  = X_target * n_total
+        m_fuel  = n_fuel * M_FUEL
+        V_liq   = m_fuel / rho_liq
+        results[f'n_fuel_{tag}']      = n_fuel
+        results[f'm_fuel_{tag}']      = m_fuel
+        results[f'V_liq_{tag}_mL']    = V_liq * 1e6   # m³ → mL
+        results[f'V_liq_{tag}_L']     = V_liq * 1e3   # m³ → L
+
+    return results
+
+
+# =========================================================================
 #  BAY ODE SYSTEM
 # =========================================================================
 def bay_ode(t, y, params):
@@ -542,6 +614,39 @@ def main():
         print(f'  Ignitable?          : No — need ≥ {MIE_ss:.3f} mJ')
     else:
         print(f'  Ignitable?          : N/A — mixture not flammable')
+    print(sep)
+
+    # =====================================================================
+    #  FUEL VOLUME REQUIRED FOR FLAMMABLE MIXTURE (35 °C, 100 m)
+    # =====================================================================
+    fv_T_C  = 35.0    # [°C]
+    fv_alt  = 100.0   # [m]
+    fv = fuel_volume_for_flammability(fv_T_C, fv_alt, V_bay,
+                                       LEL_SL_pct, UEL_SL_pct)
+
+    print()
+    print(sep)
+    print('  FUEL VOLUME FOR FLAMMABLE MIXTURE')
+    print(f'  Conditions: {fv_T_C:.0f} °C, {fv_alt:.0f} m altitude')
+    print(sep)
+    print(f'  Ambient pressure    : {fv["P_amb"]:.0f} Pa '
+          f'({fv["P_amb"] / 6894.76:.2f} psi)')
+    print(f'  Liquid fuel density : {fv["rho_liq"]:.1f} kg/m³')
+    print(f'  Bay volume          : {V_bay * 1000:.1f} L')
+    print(f'  LEL (alt-corrected) : {fv["LEL_alt"] * 100:.4f} %')
+    print(f'  UEL (alt-corrected) : {fv["UEL_alt"] * 100:.4f} %')
+    print(f'  ---')
+    print(f'  Liquid fuel to reach LEL          : {fv["V_liq_LEL_mL"]:.3f} mL '
+          f'({fv["m_fuel_LEL"] * 1000:.3f} g)')
+    print(f'  Liquid fuel to reach stoichiometric: {fv["V_liq_stoich_mL"]:.3f} mL '
+          f'({fv["m_fuel_stoich"] * 1000:.3f} g)')
+    print(f'  Liquid fuel to reach UEL          : {fv["V_liq_UEL_mL"]:.3f} mL '
+          f'({fv["m_fuel_UEL"] * 1000:.3f} g)')
+    print(f'  ---')
+    print(f'  Flammable range: {fv["V_liq_LEL_mL"]:.3f} – '
+          f'{fv["V_liq_UEL_mL"]:.3f} mL of liquid fuel')
+    print(f'  NOTE: Assumes complete evaporation of the liquid into')
+    print(f'        a sealed bay with no ventilation or drainage.')
     print(sep)
 
     # =====================================================================
