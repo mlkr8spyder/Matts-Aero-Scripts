@@ -1,2 +1,5 @@
 CLAUDE.md
 README.md
+.DS_Store
+__pycache__/
+09_data_visuals/media/
