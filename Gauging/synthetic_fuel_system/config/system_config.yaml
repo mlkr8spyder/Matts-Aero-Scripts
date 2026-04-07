@@ -1,0 +1,144 @@
+# Synthetic Fuel System Configuration
+# Central parameter file for the 5-tank fuel gauging system.
+# Maps internal names to data file column names and documents all
+# physical constants, calibration values, and injected error parameters.
+
+dataset_type: synthetic  # synthetic | flight_test
+
+# Aircraft reference
+dry_weight_lb: 12000.0
+
+# Fuel properties
+fuel:
+  density_lab_lb_per_gal: 6.71
+  dielectric_nominal: 2.05
+  fuel_type: "Jet-A equivalent"
+  # Density-dielectric linear model: rho(lb/gal) = a * kappa + b
+  # Calibrated so rho(2.05) = 6.71 lb/gal
+  density_model_a: 4.667      # slope [lb/gal per unit kappa]
+  density_model_b: -2.857     # intercept [lb/gal]
+  # Temperature compensation (optional explicit term)
+  reference_temp_F: 60.0      # calibration reference temperature [°F]
+  density_temp_coef: -0.0035  # d(rho)/dT [lb/gal per °F] — Jet-A nominal
+  dielectric_temp_coef: -0.0011  # d(kappa)/dT [per °F] — Jet-A nominal
+  enable_temperature_term: false  # kappa implicitly carries temperature info
+
+# Volume reduction pipeline fractions (applied to each tank's gross CAD volume)
+# Total reduction is approximately: structural + ullage + unusable = ~5% of gross
+structural_fraction: 0.003  # ~0.3% displaced by probes, baffles, fittings, wiring
+ullage_fraction: 0.02       # top 2% of tank height reserved for thermal expansion
+unusable_fraction: 0.015    # bottom 1.5% trapped below sump/probe level
+
+# Probe sense-point offsets (inches inset from physical probe ends)
+# Capacitance electronics report fuel height relative to the *lower sense
+# point*, not the physical probe base. These offsets account for the
+# mounting flange / lower guard ring and the end cap / upper guard ring.
+probe_sense_offsets:
+  default_base_in: 0.50     # lower guard ring + mounting flange
+  default_top_in: 0.25      # upper guard ring + end cap
+  # Per-probe overrides applied in src/tank_geometry.py:build_tank_system()
+  # T3 probes use asymmetric offsets because their sense regions must
+  # meet at the blend zone (WL 90-92).
+  notes: "T3_lower uses top=0.20; T3_upper uses base=0.20"
+
+# Tank definitions (5 tanks, plus-sign layout)
+tanks:
+  T1:
+    name: Forward
+    probe_type: real
+    probe_count: 1
+    floor_wl: 88.0
+    ceiling_wl: 104.0
+  T2:
+    name: Left
+    probe_type: real
+    probe_count: 1
+    floor_wl: 85.0
+    ceiling_wl: 103.0
+  T3:
+    name: Center
+    probe_type: real_pseudo_combo
+    probe_count: 2
+    floor_wl: 80.0
+    ceiling_wl: 100.0
+    blend_zone_wl: [90.0, 92.0]
+  T4:
+    name: Right
+    probe_type: real
+    probe_count: 1
+    floor_wl: 85.0
+    ceiling_wl: 103.0
+  T5:
+    name: Aft
+    probe_type: pure_pseudo
+    probe_count: 0
+    floor_wl: 83.0
+    ceiling_wl: 105.0
+    pseudo_source: T3
+    pseudo_dx: 55.0
+    pseudo_dy: 0.0
+
+# Defuel sequence info
+defuel:
+  drain_order: [T1, [T2, T4], T5, T3]
+  phase_boundaries_samples: [0, 200, 550, 750, 1000]
+  n_samples: 1000
+
+# Refuel sequence info
+# fill_order: priority sequence for sequenced refuel (T3 first as collector)
+# In simultaneous (single-point pressure) refuel, all tanks fill at once;
+# completion order is T1→T5→T2/T4→T3 (see docs/fuel_system_description.md)
+refuel:
+  fill_order: [T3, T5, [T2, T4], T1]
+  phase_boundaries_samples: [0, 250, 450, 700, 800]
+  n_samples: 800
+
+# Single-point refuel system parameters
+refuel_system:
+  supply_pressure_psi: 55.0       # External fuel supply pressure
+  manifold_wl: 78.0               # Manifold elevation (below all tanks)
+  max_flow_gpm: 60.0              # Max total flow through adapter
+  valve_capacity_gpm: 15.0        # Per-valve max flow rate
+  valve_close_time_s: 0.5         # Shutoff valve close time
+  valve_open_time_s: 0.3          # Shutoff valve open time
+  hi_level_hysteresis_in: 0.3     # High-level sensor hysteresis band
+  adapter_location:               # Single-point refuel adapter position
+    fs: 240.0
+    bl: 0.0
+    wl: 78.0
+
+# Column name mapping (for data loader compatibility)
+column_map:
+  timestamp: time_s
+  pitch: pitch_deg
+  roll: roll_deg
+  density_system: density_system
+  total_indicated_weight: total_indicated_weight_lb
+  scale_gross_weight: scale_gross_weight_lb
+  dry_weight: dry_weight_lb
+  # Per-tank columns use pattern: {prefix}_T{n}
+  probe_height_prefix: probe_height
+  indicated_volume_prefix: indicated_volume_gal
+  indicated_weight_prefix: indicated_weight_lb
+
+# Probe failure detection thresholds
+probe_failure:
+  open_circuit_threshold_in: -0.1     # below this = open circuit
+  short_circuit_margin_in: 0.5        # above max + this = short circuit
+  rate_exceedance_threshold_in_per_s: 2.0  # max acceptable dh/dt
+  stale_data_timeout_s: 30.0          # no change for this long = stale
+  stale_data_min_delta_in: 0.01       # minimum change to not be "stale"
+
+# Known injected errors (for validation)
+# These errors are deliberately embedded in the synthetic data so that the
+# analysis tools can be validated against known ground truth.
+injected_errors:
+  density_bias_pct: 0.3               # System density 0.3% above lab value
+  t2_probe_nonlinearity_in: 0.15      # T2 probe parabolic error, peaks at 40-60% fill
+  t3_blend_step_in: 0.08              # T3 step discontinuity at blend zone boundaries
+  t5_pitch_gain_threshold_deg: 3.0    # T5 pseudo error amplifies above this pitch
+  t5_pitch_error_gain: 0.02           # T5 extra error per degree above threshold
+  probe_noise_std_in: 0.02            # Per-reading Gaussian noise, 1-sigma
+  dielectric_drift_amplitude: 0.005   # Sinusoidal kappa drift amplitude (±0.5% of nominal)
+  dielectric_drift_period_samples: 500  # Drift period in samples
+  table_quantization_pct: 0.2         # Table step volume noise as % of gross volume

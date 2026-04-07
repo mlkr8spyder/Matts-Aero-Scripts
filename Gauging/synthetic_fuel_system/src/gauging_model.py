@@ -24,7 +24,45 @@ from .tank_geometry import (
 
 @dataclass
 class FuelProperties:
-    """Fuel dielectric and density properties."""
+    """
+    Fuel dielectric and density properties, with optional temperature
+    compensation.
+
+    Physical background
+    -------------------
+    In a capacitance fuel gauging system, the capacitance of a wetted probe
+    is proportional to the dielectric constant (κ) of the fuel. The
+    electronics measure κ directly on a compensator element. The density
+    (ρ) of the fuel is not measured directly — instead it is *inferred*
+    from κ via a calibrated relationship:
+
+        ρ(κ) = a · κ + b    [lb/gal]        (1)
+
+    This works because both κ and ρ of a hydrocarbon fuel track with
+    temperature and composition in a consistent, monotonic way: denser
+    fuel has more polarizable molecules per unit volume, giving a higher
+    κ. The linear coefficients (a, b) are determined by calibrating
+    against two or more (κ, ρ) reference points for the target fuel grade.
+
+    Temperature compensation
+    ------------------------
+    Both κ and ρ decrease as temperature rises (the fuel expands). For
+    Jet-A:
+
+        dρ/dT ≈ -0.0035 lb/gal per °F
+        dκ/dT ≈ -0.0011 per °F
+
+    If the measured κ carries temperature information already (same
+    element, same fuel bath), equation (1) *implicitly* compensates for
+    temperature. However, some systems publish a temperature-explicit
+    model:
+
+        ρ(κ, T) = a · κ + b + c · (T - T_ref)    (2)
+
+    with c small and near-zero if (a, b) were calibrated against κ over
+    temperature. This class supports both forms — set
+    ``enable_temperature_term`` to include the explicit c term.
+    """
     density_lab_lb_per_gal: float = 6.71        # Lab-measured ground truth
     dielectric_air: float = 1.0
     dielectric_fuel_nominal: float = 2.05       # Jet-A at 60°F
@@ -34,9 +72,52 @@ class FuelProperties:
     density_model_a: float = 4.667              # slope (lb/gal per unit kappa)
     density_model_b: float = -2.857             # intercept (lb/gal)
 
-    def density_from_dielectric(self, kappa: float) -> float:
-        """Compute density from dielectric constant using linear model."""
-        return self.density_model_a * kappa + self.density_model_b
+    # Temperature compensation (optional explicit term)
+    reference_temp_F: float = 60.0              # reference temperature for calibration
+    density_temp_coef: float = -0.0035          # dρ/dT (lb/gal per °F)
+    dielectric_temp_coef: float = -0.0011       # dκ/dT (per °F)
+    enable_temperature_term: bool = False       # add explicit c·(T-Tref) term
+
+    def density_from_dielectric(self, kappa: float,
+                                temperature_F: Optional[float] = None) -> float:
+        """
+        Compute fuel density from the measured dielectric constant.
+
+        Parameters
+        ----------
+        kappa : float
+            Dielectric constant as measured by the compensator element.
+        temperature_F : float, optional
+            Fuel temperature in °F. Only used when
+            ``enable_temperature_term`` is True; otherwise κ is assumed to
+            already carry the temperature information.
+
+        Returns
+        -------
+        density : float
+            Density in lb/gal.
+        """
+        rho = self.density_model_a * kappa + self.density_model_b
+        if self.enable_temperature_term and temperature_F is not None:
+            rho += self.density_temp_coef * (temperature_F - self.reference_temp_F)
+        return rho
+
+    def dielectric_at_temperature(self, kappa_ref: float,
+                                  temperature_F: float) -> float:
+        """
+        Predict the dielectric constant at a given temperature, starting
+        from a reference value at ``reference_temp_F``. Useful for
+        generating synthetic sensor readings.
+        """
+        return kappa_ref + self.dielectric_temp_coef * (temperature_F - self.reference_temp_F)
+
+    def density_at_temperature(self, rho_ref: float,
+                               temperature_F: float) -> float:
+        """
+        Predict the true fuel density at a given temperature, starting
+        from a reference value at ``reference_temp_F``.
+        """
+        return rho_ref + self.density_temp_coef * (temperature_F - self.reference_temp_F)
 
     @property
     def density_nominal(self) -> float:

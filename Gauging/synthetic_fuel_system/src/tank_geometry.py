@@ -19,13 +19,24 @@ from typing import Optional
 # Constants
 # ---------------------------------------------------------------------------
 IN3_PER_GALLON = 231.0
-ULLAGE_FRACTION = 0.02      # top 2% reserved for expansion
-UNUSABLE_FRACTION = 0.015   # bottom 1.5% trapped below sump/probe
+ULLAGE_FRACTION = 0.02          # top 2% reserved for thermal expansion
+UNUSABLE_FRACTION = 0.015       # bottom 1.5% trapped below sump/probe
+STRUCTURAL_FRACTION = 0.003     # ~0.3% of gross displaced by internal hardware
+                                # (probes, baffles, pickups, fittings, wiring)
 
 
 @dataclass
 class Probe:
-    """A single capacitance probe."""
+    """A single capacitance probe.
+
+    A real capacitance probe has a *physical* envelope (the mounting hardware
+    from base to top) and an *electrical* envelope (the active sensing region
+    between the lower and upper guard electrodes). The sense region is
+    typically inset from the physical ends by a small amount (end caps,
+    mounting flanges, and guard rings). Fuel height reported by the
+    electronics is relative to the bottom **sense point**, not the physical
+    base of the probe, so the two offsets must be tracked separately.
+    """
     name: str
     base_fs: float
     base_bl: float
@@ -34,9 +45,30 @@ class Probe:
     top_bl: float
     top_wl: float
 
+    # Sense-point offsets (inches inset from the physical probe ends along
+    # the probe axis). Defaults are zero for backward compatibility.
+    sense_offset_base: float = 0.0  # distance from physical base to lower sense point
+    sense_offset_top: float = 0.0   # distance from physical top to upper sense point
+
     @property
     def active_length(self) -> float:
+        """Total physical length of the probe envelope (base→top)."""
         return self.top_wl - self.base_wl
+
+    @property
+    def sense_base_wl(self) -> float:
+        """Waterline of the lower sense point (bottom of the electrical active region)."""
+        return self.base_wl + self.sense_offset_base
+
+    @property
+    def sense_top_wl(self) -> float:
+        """Waterline of the upper sense point (top of the electrical active region)."""
+        return self.top_wl - self.sense_offset_top
+
+    @property
+    def active_sense_length(self) -> float:
+        """Electrical active length — the span over which fuel height is actually sensed."""
+        return max(0.0, self.sense_top_wl - self.sense_base_wl)
 
     @property
     def center_fs(self) -> float:
@@ -281,15 +313,47 @@ def fuel_height_at_point(fuel_height_at_ref: float, ref_fs: float, ref_bl: float
 def wetted_height_on_probe(probe: Probe, fuel_surface_wl: float) -> float:
     """
     Compute the wetted height on a probe given the fuel surface WL at the
-    probe's location. Accounts for probe tilt (diagonal mounting).
+    probe's location. Returns the wetted length measured from the probe's
+    *physical* base along the probe axis (0 to active_length).
 
-    Returns the wetted length along the probe axis (0 to active_length).
+    This is the raw geometric wetted length. Real capacitance electronics
+    only sense the portion between the lower and upper sense points — see
+    :func:`sensed_height_on_probe` for the electrically-reported height.
     """
     # For a nearly-vertical probe, the wetted height is approximately
     # the fuel surface WL minus the probe base WL, projected onto the probe axis.
     raw_wetted = fuel_surface_wl - probe.base_wl
     wetted = np.clip(raw_wetted, 0.0, probe.active_length)
     return wetted
+
+
+def sensed_height_on_probe(probe: Probe, fuel_surface_wl: float) -> float:
+    """
+    Compute the height reported by the capacitance electronics for a given
+    fuel surface WL at the probe's location.
+
+    The electronics measure wetted capacitance over the active sense region
+    (between ``sense_base_wl`` and ``sense_top_wl``) and report that height
+    *relative to the lower sense point*. Below the lower sense point the
+    reading saturates at 0; above the upper sense point it saturates at
+    ``active_sense_length``.
+
+    Returns a value in inches, in the range [0, active_sense_length].
+    """
+    raw = fuel_surface_wl - probe.sense_base_wl
+    return float(np.clip(raw, 0.0, probe.active_sense_length))
+
+
+def indicated_to_physical_height(probe: Probe, sensed_height: float) -> float:
+    """
+    Convert a sensed height (measured from the lower sense point) back to a
+    height referenced to the probe's physical base.
+
+    This is the inverse of the sense-point offset. H-V tables are built
+    against physical base-referenced heights, so the sensed height must be
+    shifted up by ``sense_offset_base`` before table lookup.
+    """
+    return sensed_height + probe.sense_offset_base
 
 
 def cg_for_fuel_state(tank: Tank, fuel_height_at_ref: float,
@@ -350,6 +414,13 @@ def build_tank_system() -> dict:
     Returns a dict keyed by tank_id (1-5) containing Tank objects.
     """
 
+    # Typical sense-point insets for a capacitance probe:
+    #   - 0.50" at the base for the lower guard ring + mounting flange
+    #   - 0.25" at the top for the upper guard ring + end cap
+    # These values shift the electrically-sensed region *inside* the
+    # physical envelope. Fuel wets the hardware below the lower sense
+    # point but is not reported by the electronics.
+
     # ---- Tank 1: Forward ----
     t1 = Tank(
         name="Forward", tank_id=1,
@@ -359,7 +430,8 @@ def build_tank_system() -> dict:
         probe_type="real",
         probes=[
             Probe("T1_probe", base_fs=210.0, base_bl=-0.5, base_wl=88.24,
-                  top_fs=210.0, top_bl=0.5, top_wl=103.68),
+                  top_fs=210.0, top_bl=0.5, top_wl=103.68,
+                  sense_offset_base=0.50, sense_offset_top=0.25),
         ],
     )
 
@@ -372,7 +444,8 @@ def build_tank_system() -> dict:
         probe_type="real",
         probes=[
             Probe("T2_probe", base_fs=260.0, base_bl=-42.5, base_wl=85.27,
-                  top_fs=260.0, top_bl=-41.5, top_wl=102.64),
+                  top_fs=260.0, top_bl=-41.5, top_wl=102.64,
+                  sense_offset_base=0.50, sense_offset_top=0.25),
         ],
     )
 
@@ -385,9 +458,11 @@ def build_tank_system() -> dict:
         probe_type="real_pseudo_combo",
         probes=[
             Probe("T3_lower", base_fs=260.0, base_bl=-0.5, base_wl=80.30,
-                  top_fs=260.0, top_bl=0.0, top_wl=92.00),
+                  top_fs=260.0, top_bl=0.0, top_wl=92.00,
+                  sense_offset_base=0.50, sense_offset_top=0.20),
             Probe("T3_upper", base_fs=260.0, base_bl=0.0, base_wl=90.00,
-                  top_fs=260.0, top_bl=0.5, top_wl=99.60),
+                  top_fs=260.0, top_bl=0.5, top_wl=99.60,
+                  sense_offset_base=0.20, sense_offset_top=0.25),
         ],
     )
 
@@ -400,7 +475,8 @@ def build_tank_system() -> dict:
         probe_type="real",
         probes=[
             Probe("T4_probe", base_fs=260.0, base_bl=41.5, base_wl=85.27,
-                  top_fs=260.0, top_bl=42.5, top_wl=102.64),
+                  top_fs=260.0, top_bl=42.5, top_wl=102.64,
+                  sense_offset_base=0.50, sense_offset_top=0.25),
         ],
     )
 
@@ -419,6 +495,112 @@ def build_tank_system() -> dict:
 
     tanks = {t.tank_id: t for t in [t1, t2, t3, t4, t5]}
     return tanks
+
+
+# ---------------------------------------------------------------------------
+# Volume reduction pipeline: CAD → usable fuel
+# ---------------------------------------------------------------------------
+
+def volume_reduction_breakdown(tank: Tank,
+                               structural_fraction: float = STRUCTURAL_FRACTION,
+                               ullage_fraction: float = ULLAGE_FRACTION,
+                               unusable_fraction: float = UNUSABLE_FRACTION
+                               ) -> dict:
+    """
+    Compute the full CAD → usable fuel volume reduction pipeline for a tank.
+
+    The raw CAD volume of a fuel tank is never the usable fuel capacity.
+    Several physical and operational deductions must be applied in order:
+
+        1. **Raw CAD volume**: the enclosed internal volume of the tank
+           envelope as pulled straight from the CAD model (here idealized
+           to a rectangular prism).
+
+        2. **Structural / hardware displacement**: volume physically
+           occupied inside the tank by probes, baffles, sump pickups,
+           boost-pump canisters, fittings, wiring harnesses, and stringer
+           stiffeners. This volume cannot hold fuel. Modeled here as a
+           fixed fraction of gross (~0.3%).
+
+        3. **Ullage reserve**: the top band of the tank reserved for
+           thermal expansion and vent path. Fuel level is not permitted
+           above ``wl_max - ullage_height``.
+
+        4. **Unusable fuel**: fuel trapped below the lowest pickup (sump
+           or boost-pump inlet). This fuel is physically present but
+           cannot be consumed or reliably indicated.
+
+        5. **Usable fuel capacity**: what remains. This is the number
+           that appears on placards and in the flight manual.
+
+    Returns
+    -------
+    dict with (all in³ unless noted):
+        gross_cad_in3
+        structural_displacement_in3
+        after_structural_in3
+        ullage_reserve_in3
+        unusable_fuel_in3
+        usable_in3
+        usable_gal
+        reduction_pct   — (1 - usable/gross) × 100
+    """
+    gross = tank.gross_volume_in3
+    structural = gross * structural_fraction
+    after_structural = gross - structural
+    # Ullage and unusable are thin bands at top/bottom; compute on the
+    # *original* base area (structural displacement is distributed).
+    base_area = tank.base_area
+    ullage = base_area * (tank.height_wl * ullage_fraction)
+    unusable = base_area * (tank.height_wl * unusable_fraction)
+    usable = after_structural - ullage - unusable
+    usable = max(0.0, usable)
+
+    return {
+        'gross_cad_in3': gross,
+        'gross_cad_gal': gross / IN3_PER_GALLON,
+        'structural_displacement_in3': structural,
+        'structural_displacement_gal': structural / IN3_PER_GALLON,
+        'after_structural_in3': after_structural,
+        'ullage_reserve_in3': ullage,
+        'ullage_reserve_gal': ullage / IN3_PER_GALLON,
+        'unusable_fuel_in3': unusable,
+        'unusable_fuel_gal': unusable / IN3_PER_GALLON,
+        'usable_in3': usable,
+        'usable_gal': usable / IN3_PER_GALLON,
+        'reduction_pct': (1.0 - usable / gross) * 100.0 if gross > 0 else 0.0,
+    }
+
+
+def print_volume_reduction_report(tanks: dict) -> None:
+    """Print a per-tank CAD → usable volume reduction table."""
+    print(f"{'Tank':<18} {'Gross':>10} {'Struct':>10} {'Ullage':>10} "
+          f"{'Unusable':>10} {'Usable':>10} {'Red%':>7}")
+    print(f"{'':<18} {'(gal)':>10} {'(gal)':>10} {'(gal)':>10} "
+          f"{'(gal)':>10} {'(gal)':>10} {'':>7}")
+    print("-" * 82)
+    totals = {'gross': 0.0, 'struct': 0.0, 'ullage': 0.0,
+              'unusable': 0.0, 'usable': 0.0}
+    for tid in sorted(tanks.keys()):
+        t = tanks[tid]
+        b = volume_reduction_breakdown(t)
+        print(f"T{t.tank_id} {t.name:<13} "
+              f"{b['gross_cad_gal']:>10.2f} "
+              f"{b['structural_displacement_gal']:>10.2f} "
+              f"{b['ullage_reserve_gal']:>10.2f} "
+              f"{b['unusable_fuel_gal']:>10.2f} "
+              f"{b['usable_gal']:>10.2f} "
+              f"{b['reduction_pct']:>6.2f}%")
+        totals['gross'] += b['gross_cad_gal']
+        totals['struct'] += b['structural_displacement_gal']
+        totals['ullage'] += b['ullage_reserve_gal']
+        totals['unusable'] += b['unusable_fuel_gal']
+        totals['usable'] += b['usable_gal']
+    print("-" * 82)
+    red_pct = (1.0 - totals['usable'] / totals['gross']) * 100.0
+    print(f"{'TOTAL':<18} {totals['gross']:>10.2f} {totals['struct']:>10.2f} "
+          f"{totals['ullage']:>10.2f} {totals['unusable']:>10.2f} "
+          f"{totals['usable']:>10.2f} {red_pct:>6.2f}%")
 
 
 def print_system_summary(tanks: dict) -> None:
