@@ -217,9 +217,11 @@ class RefuelController:
         manifold_wl = self.adapter.location_wl
         P_supply = self.adapter.supply_pressure_psi
 
-        # Compute back-pressure for each tank (simplified)
-        # Pressure head (psi) = density(lb/gal) * height(in) / 231(in³/gal) * area_factor
-        # Simplified: P_head ≈ 0.036 * density_lb_per_gal * height_inches
+        # Hydrostatic head pressure (psi) from fuel column above manifold.
+        # Derivation: P = rho * g * h, converted to consistent units:
+        #   rho (lb/gal) * h (in) / 231 (in^3/gal) * 1 (psi per lb/in^2)
+        #   = rho * h / 231 * (1/144) * 62.4... simplified to ~0.036 * rho * h
+        # This approximation is standard for aviation fuel systems.
         flows = {}
         total_demand = 0.0
 
@@ -243,7 +245,9 @@ class RefuelController:
             flows[tid] = q
             total_demand += q
 
-        # Cap total flow at adapter max
+        # When total demand exceeds supply, scale all valve flows proportionally.
+        # This models the physical behavior of a shared-manifold system where
+        # back-pressure from one tank affects flow to all tanks.
         if total_demand > self.adapter.max_flow_rate_gpm:
             scale = self.adapter.max_flow_rate_gpm / total_demand
             flows = {tid: q * scale for tid, q in flows.items()}
@@ -389,6 +393,8 @@ class ProbeHealthMonitor:
             pass
 
         # --- Stale data check ---
+        # Wait for 5 readings before checking stale data to allow the filter
+        # to stabilize after initialization or fault recovery.
         if not failure and self.readings_since_reset > 5:
             if abs(raw_height - self.previous_reading) < self.stale_min_delta:
                 self.stale_counter_s += dt_s

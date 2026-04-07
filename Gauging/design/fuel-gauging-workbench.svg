@@ -1,0 +1,321 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1024" viewBox="0 0 1600 1024" fill="none">
+  <defs>
+    <style>
+      .sans { font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif; }
+      .mono { font-family: "IBM Plex Mono", Menlo, Consolas, monospace; }
+      .title { font-size: 20px; font-weight: 600; fill: #0F1720; }
+      .label { font-size: 11px; font-weight: 600; fill: #5B6876; letter-spacing: 0.06em; text-transform: uppercase; }
+      .body { font-size: 13px; font-weight: 500; fill: #0F1720; }
+      .subtle { font-size: 12px; font-weight: 500; fill: #5B6876; }
+      .metric { font-size: 22px; font-weight: 600; fill: #0F1720; }
+      .mono-body { font-size: 12px; font-weight: 500; fill: #0F1720; }
+      .mono-small { font-size: 11px; font-weight: 500; fill: #5B6876; }
+      .axis { font-size: 11px; font-weight: 500; fill: #465463; }
+      .tiny { font-size: 10px; font-weight: 500; fill: #5B6876; }
+    </style>
+    <pattern id="diag-gray" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="8" height="8" fill="#D5DDE5"/>
+      <line x1="0" y1="0" x2="0" y2="8" stroke="#B4BEC9" stroke-width="2"/>
+    </pattern>
+    <pattern id="diag-ullage" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="8" height="8" fill="#F5D8D2"/>
+      <line x1="0" y1="0" x2="0" y2="8" stroke="#D6A49B" stroke-width="2"/>
+    </pattern>
+    <pattern id="plot-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#E6EBF0" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="1600" height="1024" fill="#EEF2F6"/>
+
+  <rect x="16" y="16" width="1568" height="44" rx="10" fill="#F8FAFC" stroke="#C3CDD8"/>
+  <text x="32" y="43" class="sans title">Fuel Gauging Workbench</text>
+  <text x="290" y="43" class="sans subtle">Scenario: Defuel / nominal</text>
+  <rect x="1262" y="24" width="84" height="28" rx="6" fill="#EFF4F8" stroke="#C3CDD8"/>
+  <text x="1278" y="42" class="sans body">Imperial</text>
+  <rect x="1360" y="24" width="208" height="28" rx="6" fill="#EFF4F8" stroke="#C3CDD8"/>
+  <text x="1378" y="42" class="mono mono-small">EXPORT READY / checksum valid</text>
+
+  <rect x="16" y="72" width="304" height="700" rx="12" fill="#F8FAFC" stroke="#C3CDD8"/>
+  <rect x="332" y="72" width="936" height="700" rx="12" fill="#F8FAFC" stroke="#C3CDD8"/>
+  <rect x="1280" y="72" width="304" height="700" rx="12" fill="#F8FAFC" stroke="#C3CDD8"/>
+  <rect x="16" y="784" width="1568" height="224" rx="12" fill="#F8FAFC" stroke="#C3CDD8"/>
+
+  <text x="32" y="102" class="sans label">Left Control Panel</text>
+  <text x="348" y="102" class="sans label">Main Plot Panel</text>
+  <text x="1296" y="102" class="sans label">Right Inspector Panel</text>
+  <text x="32" y="814" class="sans label">Bottom Playback Panel</text>
+
+  <g transform="translate(28 120)">
+    <rect width="280" height="116" rx="10" fill="#FFFFFF" stroke="#D7DFE7"/>
+    <text x="14" y="20" class="sans label">Attitude</text>
+    <text x="14" y="42" class="sans body">Pitch</text>
+    <rect x="72" y="33" width="164" height="8" rx="4" fill="#D9E1E8"/>
+    <rect x="72" y="33" width="98" height="8" rx="4" fill="#607384"/>
+    <circle cx="170" cy="37" r="8" fill="#FFFFFF" stroke="#607384" stroke-width="2"/>
+    <rect x="242" y="24" width="26" height="24" rx="6" fill="#EFF4F8" stroke="#C3CDD8"/>
+    <text x="246" y="41" class="mono mono-small">+2.3</text>
+    <text x="14" y="80" class="sans body">Roll</text>
+    <rect x="72" y="71" width="164" height="8" rx="4" fill="#D9E1E8"/>
+    <rect x="72" y="71" width="66" height="8" rx="4" fill="#607384"/>
+    <circle cx="138" cy="75" r="8" fill="#FFFFFF" stroke="#607384" stroke-width="2"/>
+    <rect x="242" y="62" width="26" height="24" rx="6" fill="#EFF4F8" stroke="#C3CDD8"/>
+    <text x="246" y="79" class="mono mono-small">-1.1</text>
+  </g>
+
+  <g transform="translate(28 248)">
+    <rect width="280" height="92" rx="10" fill="#FFFFFF" stroke="#D7DFE7"/>
+    <text x="14" y="20" class="sans label">Fuel State</text>
+    <text x="14" y="46" class="sans body">Fuel level</text>
+    <rect x="92" y="37" width="144" height="8" rx="4" fill="#D9E1E8"/>
+    <rect x="92" y="37" width="91" height="8" rx="4" fill="#0F1720"/>
+    <circle cx="183" cy="41" r="8" fill="#FFFFFF" stroke="#0F1720" stroke-width="2"/>
+    <text x="14" y="72" class="mono mono-small">54.2% usable / 355.0 gal</text>
+  </g>
+
+  <g transform="translate(28 352)">
+    <rect width="280" height="136" rx="10" fill="#FFFFFF" stroke="#D7DFE7"/>
+    <text x="14" y="20" class="sans label">Visibility</text>
+    <text x="14" y="40" class="sans body">Tanks</text>
+    <circle cx="24" cy="60" r="5" fill="#2196F3"/><text x="38" y="64" class="sans subtle">T1 Forward</text>
+    <circle cx="146" cy="60" r="5" fill="#4CAF50"/><text x="160" y="64" class="sans subtle">T2 Left</text>
+    <circle cx="24" cy="88" r="5" fill="#FF9800"/><text x="38" y="92" class="sans subtle">T3 Center</text>
+    <circle cx="146" cy="88" r="5" fill="#E91E63"/><text x="160" y="92" class="sans subtle">T4 Right</text>
+    <circle cx="24" cy="116" r="5" fill="#9C27B0"/><text x="38" y="120" class="sans subtle">T5 Aft</text>
+    <text x="14" y="132" class="sans tiny">All probes visible; pseudo spans dashed.</text>
+  </g>
+
+  <g transform="translate(28 500)">
+    <rect width="280" height="124" rx="10" fill="#FFFFFF" stroke="#D7DFE7"/>
+    <text x="14" y="20" class="sans label">Scenario</text>
+    <rect x="14" y="30" width="252" height="30" rx="8" fill="#F8FAFC" stroke="#C3CDD8"/>
+    <text x="26" y="49" class="sans body">Preset: probe coverage / attitude sweep</text>
+    <text x="14" y="80" class="sans body">Error injection</text>
+    <rect x="14" y="90" width="118" height="22" rx="6" fill="#FFF6E0" stroke="#F2C567"/>
+    <text x="24" y="105" class="sans tiny" fill="#996A00">Density bias enabled</text>
+    <rect x="142" y="90" width="124" height="22" rx="6" fill="#EFF4F8" stroke="#C3CDD8"/>
+    <text x="152" y="105" class="sans tiny">Blend noise disabled</text>
+  </g>
+
+  <g transform="translate(28 636)">
+    <rect width="280" height="120" rx="10" fill="#FFFFFF" stroke="#D7DFE7"/>
+    <text x="14" y="20" class="sans label">Units And Actions</text>
+    <rect x="14" y="34" width="88" height="28" rx="6" fill="#0F1720"/>
+    <text x="34" y="52" class="sans tiny" fill="#FFFFFF">Imperial</text>
+    <rect x="108" y="34" width="74" height="28" rx="6" fill="#EFF4F8" stroke="#C3CDD8"/>
+    <text x="131" y="52" class="sans tiny">Metric</text>
+    <rect x="14" y="76" width="120" height="30" rx="8" fill="#EFF4F8" stroke="#C3CDD8"/>
+    <text x="55" y="95" class="sans body">Reset</text>
+    <rect x="146" y="76" width="120" height="30" rx="8" fill="#0F1720"/>
+    <text x="183" y="95" class="sans body" fill="#FFFFFF">Export</text>
+  </g>
+
+  <g transform="translate(348 120)">
+    <text x="0" y="0" class="sans title">Probe Coverage vs Tank Height</text>
+    <text x="0" y="22" class="sans subtle">Selected tank: T3 Center | Hovered probe: T3 upper | Compare mode: A vs B</text>
+    <rect x="0" y="38" width="904" height="614" rx="10" fill="#FFFFFF" stroke="#D7DFE7"/>
+    <rect x="24" y="60" width="856" height="568" rx="8" fill="url(#plot-grid)"/>
+
+    <line x1="72" y1="76" x2="72" y2="596" stroke="#AAB6C2" stroke-width="1.5"/>
+    <line x1="72" y1="596" x2="824" y2="596" stroke="#AAB6C2" stroke-width="1.5"/>
+
+    <line x1="72" y1="76" x2="824" y2="76" stroke="#D9E1E8"/>
+    <line x1="72" y1="180" x2="824" y2="180" stroke="#D9E1E8"/>
+    <line x1="72" y1="284" x2="824" y2="284" stroke="#D9E1E8"/>
+    <line x1="72" y1="388" x2="824" y2="388" stroke="#D9E1E8"/>
+    <line x1="72" y1="492" x2="824" y2="492" stroke="#D9E1E8"/>
+    <line x1="72" y1="596" x2="824" y2="596" stroke="#D9E1E8"/>
+
+    <text x="52" y="80" class="mono axis">105</text>
+    <text x="52" y="184" class="mono axis">100</text>
+    <text x="52" y="288" class="mono axis">95</text>
+    <text x="52" y="392" class="mono axis">90</text>
+    <text x="52" y="496" class="mono axis">85</text>
+    <text x="52" y="600" class="mono axis">80</text>
+
+    <text x="-210" y="18" class="mono axis" transform="rotate(-90 18 18)">Waterline WL (in)</text>
+    <text x="364" y="654" class="mono axis">Tank / probe station</text>
+
+    <rect x="120" y="224" width="70" height="332" fill="#2196F326" stroke="#2196F3" stroke-width="2"/>
+    <rect x="120" y="546" width="70" height="10" fill="url(#diag-gray)"/>
+    <rect x="120" y="224" width="70" height="12" fill="url(#diag-ullage)"/>
+    <line x1="155" y1="545" x2="155" y2="238" stroke="#0F1720" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="155" cy="545" r="5" fill="#0F1720"/>
+    <path d="M155 230 L149 240 H161 Z" fill="#0F1720"/>
+
+    <rect x="260" y="246" width="80" height="310" fill="#4CAF5026" stroke="#4CAF50" stroke-width="2"/>
+    <rect x="260" y="547" width="80" height="9" fill="url(#diag-gray)"/>
+    <rect x="260" y="246" width="80" height="11" fill="url(#diag-ullage)"/>
+    <line x1="300" y1="538" x2="300" y2="262" stroke="#0F1720" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="300" cy="538" r="5" fill="#0F1720"/>
+    <path d="M300 254 L294 264 H306 Z" fill="#0F1720"/>
+
+    <rect x="410" y="284" width="90" height="312" fill="#FF98003A" stroke="#FF9800" stroke-width="3"/>
+    <rect x="410" y="586" width="90" height="10" fill="url(#diag-gray)"/>
+    <rect x="410" y="284" width="90" height="12" fill="url(#diag-ullage)"/>
+    <rect x="410" y="388" width="90" height="42" fill="#FFC96666" stroke="#AB6A00" stroke-dasharray="4 4"/>
+    <line x1="445" y1="578" x2="445" y2="430" stroke="#0F1720" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="445" cy="578" r="5" fill="#0F1720"/>
+    <path d="M445 422 L439 432 H451 Z" fill="#0F1720"/>
+    <line x1="466" y1="420" x2="466" y2="297" stroke="#0F1720" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="466" cy="420" r="5" fill="#0F1720"/>
+    <path d="M466 289 L460 299 H472 Z" fill="#0F1720"/>
+    <rect x="402" y="276" width="106" height="328" rx="8" stroke="#0F1720" stroke-width="2"/>
+
+    <rect x="570" y="246" width="80" height="310" fill="#E91E6326" stroke="#E91E63" stroke-width="2"/>
+    <rect x="570" y="547" width="80" height="9" fill="url(#diag-gray)"/>
+    <rect x="570" y="246" width="80" height="11" fill="url(#diag-ullage)"/>
+    <line x1="610" y1="538" x2="610" y2="262" stroke="#0F1720" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="610" cy="538" r="5" fill="#0F1720"/>
+    <path d="M610 254 L604 264 H616 Z" fill="#0F1720"/>
+
+    <rect x="715" y="180" width="86" height="416" fill="#9C27B026" stroke="#9C27B0" stroke-width="2"/>
+    <rect x="715" y="586" width="86" height="10" fill="url(#diag-gray)"/>
+    <rect x="715" y="180" width="86" height="14" fill="url(#diag-ullage)"/>
+    <line x1="758" y1="574" x2="758" y2="198" stroke="#0F1720" stroke-width="4" stroke-linecap="round" stroke-dasharray="8 6"/>
+    <circle cx="758" cy="574" r="5" fill="#0F1720"/>
+    <path d="M758 190 L752 200 H764 Z" fill="#0F1720"/>
+    <text x="728" y="392" class="sans tiny" fill="#6C2B8F">PSEUDO</text>
+
+    <text x="132" y="620" class="sans body" fill="#2196F3">T1</text>
+    <text x="136" y="636" class="sans tiny">Forward</text>
+    <text x="277" y="620" class="sans body" fill="#4CAF50">T2</text>
+    <text x="285" y="636" class="sans tiny">Left</text>
+    <text x="426" y="620" class="sans body" fill="#FF9800">T3</text>
+    <text x="420" y="636" class="sans tiny">Center / combo</text>
+    <text x="588" y="620" class="sans body" fill="#E91E63">T4</text>
+    <text x="592" y="636" class="sans tiny">Right</text>
+    <text x="743" y="620" class="sans body" fill="#9C27B0">T5</text>
+    <text x="749" y="636" class="sans tiny">Aft / pseudo</text>
+
+    <rect x="650" y="74" width="202" height="116" rx="8" fill="#F8FAFC" stroke="#D7DFE7"/>
+    <circle cx="668" cy="95" r="5" fill="#708394"/><text x="682" y="99" class="sans tiny">Tank span</text>
+    <line x1="662" y1="116" x2="674" y2="116" stroke="#0F1720" stroke-width="4"/><text x="682" y="120" class="sans tiny">Probe</text>
+    <rect x="660" y="129" width="14" height="10" fill="url(#diag-gray)"/><text x="682" y="138" class="sans tiny">Unusable</text>
+    <rect x="660" y="147" width="14" height="10" fill="url(#diag-ullage)"/><text x="682" y="156" class="sans tiny">Ullage</text>
+    <rect x="660" y="165" width="14" height="10" fill="#FFC96666" stroke="#AB6A00" stroke-dasharray="3 3"/><text x="682" y="174" class="sans tiny">Blend zone</text>
+
+    <line x1="466" y1="420" x2="552" y2="352" stroke="#8B99A7" stroke-width="1.5" stroke-dasharray="3 3"/>
+    <rect x="552" y="308" width="186" height="82" rx="8" fill="#0F1720"/>
+    <text x="566" y="328" class="sans tiny" fill="#FFFFFF">Hovered probe</text>
+    <text x="566" y="348" class="mono mono-small" fill="#FFFFFF">T3 upper</text>
+    <text x="566" y="365" class="mono mono-small" fill="#B4C3CF">Active range 90.2 - 99.35 WL</text>
+    <text x="566" y="382" class="mono mono-small" fill="#B4C3CF">Coverage confidence 0.94</text>
+  </g>
+
+  <g transform="translate(1292 120)">
+    <rect width="280" height="88" rx="10" fill="#FFFFFF" stroke="#D7DFE7"/>
+    <text x="14" y="20" class="sans label">Selection</text>
+    <text x="14" y="46" class="sans title" font-size="18">T3 Center</text>
+    <text x="14" y="68" class="sans subtle">Real-pseudo combination probe logic</text>
+
+    <rect y="100" width="280" height="94" rx="10" fill="#FFFFFF" stroke="#D7DFE7"/>
+    <text x="14" y="120" class="sans label">Active Range</text>
+    <text x="14" y="148" class="mono metric">80.8 - 99.35</text>
+    <text x="14" y="172" class="mono mono-small">Usable: 80.30 - 99.60 WL</text>
+
+    <rect y="206" width="280" height="92" rx="10" fill="#FFFFFF" stroke="#D7DFE7"/>
+    <text x="14" y="226" class="sans label">Margins</text>
+    <text x="14" y="252" class="mono mono-small">Unusable margin   0.50 in</text>
+    <text x="14" y="272" class="mono mono-small">Ullage margin     0.25 in</text>
+
+    <rect y="310" width="280" height="96" rx="10" fill="#FFFFFF" stroke="#D7DFE7"/>
+    <text x="14" y="330" class="sans label">Coverage Confidence</text>
+    <rect x="14" y="350" width="252" height="12" rx="6" fill="#D9E1E8"/>
+    <rect x="14" y="350" width="222" height="12" rx="6" fill="#607384"/>
+    <text x="14" y="382" class="mono mono-small">0.94 / high confidence within blend zone</text>
+
+    <rect y="418" width="280" height="82" rx="10" fill="#FFF6E0" stroke="#F2C567"/>
+    <rect x="0" y="418" width="6" height="82" rx="3" fill="#F59E0B"/>
+    <text x="14" y="438" class="sans label" fill="#996A00">Warning</text>
+    <text x="14" y="462" class="sans body" fill="#7A5200">Blend transition sensitivity elevated</text>
+    <text x="14" y="482" class="mono mono-small" fill="#7A5200">Threshold: dError / dHeight exceeds nominal band</text>
+
+    <rect y="512" width="280" height="152" rx="10" fill="#FFFFFF" stroke="#D7DFE7"/>
+    <text x="14" y="532" class="sans label">Derived Metrics</text>
+    <text x="14" y="556" class="mono mono-small">Effective height        91.22 WL</text>
+    <text x="14" y="578" class="mono mono-small">Blend fraction          0.61</text>
+    <text x="14" y="600" class="mono mono-small">Projection offset       0.00 in</text>
+    <text x="14" y="622" class="mono mono-small">Lookup status           bilinear OK</text>
+    <text x="14" y="644" class="mono mono-small">Estimated error         +3.4 lb</text>
+
+    <rect y="676" width="280" height="80" rx="10" fill="#FFFFFF" stroke="#D7DFE7"/>
+    <text x="14" y="696" class="sans label">Validation Output</text>
+    <text x="14" y="720" class="mono mono-small">No missing table rows.</text>
+    <text x="14" y="738" class="mono mono-small">Probe overlap logic resolves cleanly.</text>
+  </g>
+
+  <g transform="translate(28 832)">
+    <rect width="360" height="156" rx="10" fill="#FFFFFF" stroke="#D7DFE7"/>
+    <text x="14" y="20" class="sans label">Playback</text>
+    <rect x="14" y="34" width="28" height="28" rx="8" fill="#EFF4F8" stroke="#C3CDD8"/>
+    <path d="M24 42 L24 54 M31 42 L31 54" stroke="#0F1720" stroke-width="2.4" stroke-linecap="round"/>
+    <rect x="50" y="34" width="28" height="28" rx="8" fill="#0F1720"/>
+    <path d="M60 42 L60 54 L69 48 Z" fill="#FFFFFF"/>
+    <rect x="86" y="34" width="28" height="28" rx="8" fill="#EFF4F8" stroke="#C3CDD8"/>
+    <path d="M103 42 L95 48 L103 54" stroke="#0F1720" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="122" y="34" width="28" height="28" rx="8" fill="#EFF4F8" stroke="#C3CDD8"/>
+    <path d="M133 42 L141 48 L133 54" stroke="#0F1720" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="170" y="52" class="mono mono-small">Time 00:08:42</text>
+
+    <line x1="16" y1="92" x2="344" y2="92" stroke="#AAB6C2" stroke-width="3" stroke-linecap="round"/>
+    <line x1="16" y1="92" x2="208" y2="92" stroke="#0F1720" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="208" cy="92" r="8" fill="#FFFFFF" stroke="#0F1720" stroke-width="2"/>
+    <line x1="74" y1="82" x2="74" y2="102" stroke="#F59E0B" stroke-width="2"/>
+    <line x1="176" y1="82" x2="176" y2="102" stroke="#F59E0B" stroke-width="2"/>
+    <line x1="292" y1="82" x2="292" y2="102" stroke="#D92D20" stroke-width="2"/>
+    <text x="14" y="122" class="sans tiny">Markers: tank handoff, warning onset, comparison bookmark</text>
+
+    <rect x="14" y="132" width="70" height="24" rx="6" fill="#0F1720"/>
+    <text x="38" y="148" class="sans tiny" fill="#FFFFFF">Compare A/B</text>
+    <rect x="92" y="132" width="54" height="24" rx="6" fill="#EFF4F8" stroke="#C3CDD8"/>
+    <text x="112" y="148" class="sans tiny">A</text>
+    <rect x="152" y="132" width="54" height="24" rx="6" fill="#FFF6E0" stroke="#F2C567"/>
+    <text x="172" y="148" class="sans tiny" fill="#7A5200">B</text>
+  </g>
+
+  <g transform="translate(404 832)">
+    <rect width="552" height="156" rx="10" fill="#FFFFFF" stroke="#D7DFE7"/>
+    <text x="14" y="20" class="sans label">Scenario Markers</text>
+    <rect x="16" y="42" width="146" height="86" rx="8" fill="#F8FAFC" stroke="#D7DFE7"/>
+    <text x="28" y="64" class="sans body">A: nominal sweep</text>
+    <text x="28" y="86" class="mono mono-small">pitch +/- 3 deg</text>
+    <text x="28" y="104" class="mono mono-small">roll +/- 5 deg</text>
+    <text x="28" y="122" class="mono mono-small">density lab aligned</text>
+
+    <rect x="178" y="42" width="160" height="86" rx="8" fill="#FFF6E0" stroke="#F2C567"/>
+    <text x="190" y="64" class="sans body" fill="#7A5200">B: injected density bias</text>
+    <text x="190" y="86" class="mono mono-small" fill="#7A5200">+0.04 lb / gal</text>
+    <text x="190" y="104" class="mono mono-small" fill="#7A5200">compare against A</text>
+
+    <rect x="356" y="42" width="180" height="86" rx="8" fill="#F8FAFC" stroke="#D7DFE7"/>
+    <text x="368" y="64" class="sans body">Selected states</text>
+    <text x="368" y="86" class="mono mono-small">T3 selected</text>
+    <text x="368" y="104" class="mono mono-small">T3 upper hovered</text>
+    <text x="368" y="122" class="mono mono-small">warning band active</text>
+  </g>
+
+  <g transform="translate(972 832)">
+    <rect width="596" height="156" rx="10" fill="#FFFFFF" stroke="#D7DFE7"/>
+    <text x="14" y="20" class="sans label">Event Log</text>
+    <line x1="14" y1="34" x2="580" y2="34" stroke="#D9E1E8"/>
+    <text x="18" y="52" class="mono mono-small">00:07:58</text>
+    <text x="108" y="52" class="mono mono-small">Attitude</text>
+    <text x="202" y="52" class="mono mono-small">Pitch +2.3 / Roll -1.1</text>
+
+    <line x1="14" y1="64" x2="580" y2="64" stroke="#EEF2F6"/>
+    <text x="18" y="82" class="mono mono-small">00:08:12</text>
+    <text x="108" y="82" class="mono mono-small">Coverage</text>
+    <text x="202" y="82" class="mono mono-small">T3 lower enters blend zone</text>
+
+    <line x1="14" y1="94" x2="580" y2="94" stroke="#EEF2F6"/>
+    <text x="18" y="112" class="mono mono-small">00:08:19</text>
+    <text x="108" y="112" class="mono mono-small">Warning</text>
+    <text x="202" y="112" class="mono mono-small" fill="#996A00">confidence dips below 0.95</text>
+
+    <line x1="14" y1="124" x2="580" y2="124" stroke="#EEF2F6"/>
+    <text x="18" y="142" class="mono mono-small">00:08:42</text>
+    <text x="108" y="142" class="mono mono-small">Compare</text>
+    <text x="202" y="142" class="mono mono-small">B overlay enabled for density bias</text>
+  </g>
+</svg>

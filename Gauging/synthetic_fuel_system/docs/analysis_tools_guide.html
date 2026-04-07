@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analysis Tools Guide</title>
+<style>
+  :root {
+    --accent: #2E7D32; --accent-light: #E8F5E9; --bg: #FAFAFA;
+    --card-bg: #FFF; --text: #212121; --text-sec: #616161;
+    --border: #E0E0E0; --code-bg: #F5F5F5;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+         color: var(--text); background: var(--bg); line-height: 1.6; }
+  .topbar { background: #1B5E20; color: white; padding: 16px 32px;
+            display: flex; align-items: center; gap: 16px; }
+  .topbar h1 { font-size: 20px; font-weight: 500; }
+  .topbar a { color: #A5D6A7; text-decoration: none; font-size: 14px; }
+  .topbar a:hover { text-decoration: underline; }
+  .container { max-width: 960px; margin: 0 auto; padding: 32px 24px; }
+  h2 { color: var(--accent); margin: 32px 0 12px; font-size: 22px;
+       border-bottom: 2px solid var(--accent-light); padding-bottom: 6px; }
+  h3 { margin: 20px 0 8px; font-size: 17px; }
+  p, li { margin-bottom: 8px; }
+  ul, ol { padding-left: 24px; }
+  .card { background: var(--card-bg); border-radius: 8px; padding: 20px;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 20px; }
+  code { background: var(--code-bg); padding: 2px 6px; border-radius: 3px;
+         font-size: 13px; }
+  pre { background: var(--code-bg); padding: 16px; border-radius: 6px;
+        overflow-x: auto; font-size: 13px; line-height: 1.5; margin: 12px 0; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+  th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; font-size: 14px; }
+  th { background: var(--accent-light); font-weight: 600; }
+  .step { counter-increment: step; display: flex; gap: 16px; margin-bottom: 16px; }
+  .step::before { content: counter(step); background: var(--accent); color: white;
+                  width: 28px; height: 28px; border-radius: 50%; display: flex;
+                  align-items: center; justify-content: center; font-weight: 700;
+                  font-size: 14px; flex-shrink: 0; margin-top: 2px; }
+  .steps { counter-reset: step; }
+  .note { background: #FFF8E1; border-left: 4px solid #FFC107; padding: 12px 16px;
+          border-radius: 4px; margin: 12px 0; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Analysis Tools Guide</h1>
+  <a href="index.html">&larr; Back to Docs Home</a>
+</div>
+
+<div class="container">
+
+<h2>Introduction</h2>
+<div class="card">
+<p>The <code>analysis/</code> package provides geometry-agnostic tools for importing,
+interpolating, comparing, and visualizing fuel gauging H-V table data. It works
+with both the synthetic simulation and real aircraft data (15+ tanks, irregular
+geometry, variable-length tables).</p>
+
+<p>This guide walks you through the full workflow from data preparation to
+dashboard generation. For the synthetic system reference, see the
+<a href="fuel_system_guide.html">Fuel System Guide</a>.</p>
+</div>
+
+<h2>Package Structure</h2>
+<div class="card">
+<pre>analysis/
+├── __init__.py
+├── importers/
+│   ├── __init__.py
+│   ├── base.py               # HVTable, TankData, TestRecord, FuelSystemData
+│   ├── mat_importer.py        # MM1D .mat struct loader
+│   ├── csv_importer.py        # Slice CSV + test data CSV loader
+│   └── synthetic_bridge.py    # Bridge to src/ simulation
+├── interpolation.py           # Variable-length H-V interpolator
+├── comparison.py              # Indicated vs actual residuals
+├── error_analysis.py          # Error decomposition and sensitivity
+└── dashboard.py               # Static HTML dashboard generator</pre>
+</div>
+
+<h2>Data Format Specifications</h2>
+
+<h3>MM1D .mat Files</h3>
+<div class="card">
+<p>The .mat importer supports two layouts:</p>
+
+<p><strong>Flat layout</strong> (most common): One MATLAB variable per field.</p>
+<pre># Required variables:
+pitch_range          — [1 × N_pitch] vector of pitch angles (degrees)
+roll_range           — [1 × N_roll] vector of roll angles (degrees)
+{TankID}_heights     — {N_pitch × N_roll} cell array, each cell is a 1-D vector
+{TankID}_volumes     — {N_pitch × N_roll} cell array, matching heights
+
+# Optional:
+{TankID}_cg_fs/bl/wl — {N_pitch × N_roll} cell arrays for CG coordinates
+{TankID}_fs_min, _fs_max, _bl_min, _bl_max, _wl_min, _wl_max — geometry</pre>
+
+<p><strong>Nested struct layout</strong>: A top-level struct with per-tank sub-structs.</p>
+<pre>Tanks.T1.heights    — cell array
+Tanks.T1.volumes    — cell array</pre>
+
+<div class="note">
+Cell arrays are variable-length by definition. Each cell at a different
+attitude can have a different number of height/volume points. This is the
+MM1D convention.
+</div>
+</div>
+
+<h3>Slice CSV Files</h3>
+<div class="card">
+<p>One CSV per table at one attitude. Minimum columns: <code>height</code> and <code>volume</code>.</p>
+<pre># Example: T3_p2.0_r-4.0.csv
+height,volume
+0.0,0.0
+0.5,2100.0
+1.0,4200.0
+...</pre>
+<p>The filename encodes pitch and roll via a regex pattern (default:
+<code>.*_p(?P&lt;pitch&gt;...)_r(?P&lt;roll&gt;...).csv</code>).
+Use <code>load_slice_directory()</code> to bulk-load an entire folder.</p>
+</div>
+
+<h3>Test Data CSV</h3>
+<div class="card">
+<p>One row per timestep. Scale weights are sparse (NaN except at checkpoints).</p>
+<pre># Required columns:
+time_s, pitch_deg, roll_deg
+
+# Per-tank (auto-detected by prefix):
+indicated_weight_lb_T1, indicated_weight_lb_T2, ...
+indicated_volume_gal_T1, indicated_volume_gal_T2, ...
+
+# Optional:
+scale_gross_weight_lb    — gross weight from scales (NaN between checkpoints)
+dry_weight_lb            — aircraft dry weight
+density_system           — system-measured fuel density (lb/gal)</pre>
+</div>
+
+<h2>Workflow</h2>
+<div class="card">
+<div class="steps">
+
+<div class="step">
+<div>
+<strong>Prepare Data</strong><br>
+Export H-V tables from your program's database to .mat (flat layout) or CSV
+slices. Export calibration test data as CSV with the column names above.
+Customize column names via kwargs if your program uses different names.
+</div>
+</div>
+
+<div class="step">
+<div>
+<strong>Import</strong><br>
+<pre>from analysis.importers.mat_importer import load_mat_tables
+from analysis.importers.csv_importer import load_test_csv
+
+# Load H-V tables
+data = load_mat_tables("my_program.mat")
+
+# Load test sequence
+test = load_test_csv("defuel_run_042.csv", sequence_type="defuel")
+data.test_data.append(test)</pre>
+</div>
+</div>
+
+<div class="step">
+<div>
+<strong>Validate</strong><br>
+Check that the imported data looks correct: number of tanks, attitudes,
+height ranges, volume ranges.
+<pre>for tid in data.tank_ids:
+    tank = data.tanks[tid]
+    print(f"{tid}: {tank.n_attitudes} attitudes, max vol = {tank.max_volume:.0f}")</pre>
+</div>
+</div>
+
+<div class="step">
+<div>
+<strong>Compare</strong><br>
+Compute residuals between indicated and scale reference weights.
+<pre>from analysis.comparison import compute_residuals, compute_error_statistics
+
+residuals = compute_residuals(test)
+stats = compute_error_statistics(residuals)
+print(f"RMS error: {stats['rms_error_lb']:.2f} lb")</pre>
+</div>
+</div>
+
+<div class="step">
+<div>
+<strong>Generate Dashboard</strong><br>
+Create a self-contained HTML file with interactive plots.
+<pre>from analysis.dashboard import generate_dashboard
+
+generate_dashboard(data, residuals, "my_analysis.html")</pre>
+Open the file in any web browser — no server needed.
+</div>
+</div>
+
+</div>
+</div>
+
+<h2>Writing Custom Adapters</h2>
+<div class="card">
+<p>If your program uses non-standard column names or .mat variable names,
+pass custom key names as kwargs:</p>
+
+<pre># Custom .mat key names
+data = load_mat_tables("program_x.mat",
+                       heights_key="H",
+                       volumes_key="V",
+                       pitch_key="alpha",
+                       roll_key="phi")
+
+# Custom CSV column names
+test = load_test_csv("test_data.csv",
+                     time_col="timestamp",
+                     pitch_col="theta",
+                     roll_col="phi",
+                     indicated_weight_prefix="fqi_wt_",
+                     scale_col="platform_gross_wt")</pre>
+
+<p>For complex transformations (e.g., converting units, merging multiple
+source files), write a thin wrapper function that calls the base importers
+and post-processes the result:</p>
+
+<pre>def load_my_program(mat_path, test_csv_path):
+    data = load_mat_tables(mat_path, heights_key="H_in", volumes_key="V_cc")
+
+    # Convert cm³ to in³
+    for tank in data.tanks.values():
+        for table in tank.tables.values():
+            table.volumes *= 0.0610237  # cc to in³
+
+    test = load_test_csv(test_csv_path, ...)
+    data.test_data.append(test)
+    return data</pre>
+</div>
+
+<h2>API Reference</h2>
+
+<h3>Data Containers (analysis/importers/base.py)</h3>
+<div class="card">
+<table>
+<tr><th>Class</th><th>Purpose</th><th>Key Fields</th></tr>
+<tr><td><code>HVTable</code></td><td>One H-V curve at one attitude</td>
+    <td><code>heights</code>, <code>volumes</code>, <code>pitch_deg</code>, <code>roll_deg</code>, optional CG arrays</td></tr>
+<tr><td><code>TankData</code></td><td>All tables for one tank</td>
+    <td><code>tank_id</code> (str), <code>tables</code> dict keyed by (pitch, roll), <code>name</code>, <code>metadata</code></td></tr>
+<tr><td><code>TestRecord</code></td><td>One timestamped measurement</td>
+    <td><code>time_s</code>, <code>indicated_weights</code>, <code>scale_weight_lb</code>, <code>density_system</code></td></tr>
+<tr><td><code>TestDataset</code></td><td>Collection of test records</td>
+    <td><code>records</code>, <code>sequence_type</code>, <code>tank_ids</code></td></tr>
+<tr><td><code>FuelSystemData</code></td><td>Top-level container</td>
+    <td><code>tanks</code> dict, <code>test_data</code> list, <code>config</code> dict</td></tr>
+</table>
+</div>
+
+<h3>Importers</h3>
+<div class="card">
+<table>
+<tr><th>Function</th><th>Purpose</th></tr>
+<tr><td><code>load_mat_tables(filepath, **kwargs)</code></td><td>Load .mat H-V tables (auto-detects flat/nested layout)</td></tr>
+<tr><td><code>load_slice_csv(filepath, ...)</code></td><td>Load one CSV slice as an HVTable</td></tr>
+<tr><td><code>load_slice_directory(directory, tank_id, ...)</code></td><td>Bulk-load CSV slices for one tank</td></tr>
+<tr><td><code>load_test_csv(filepath, ...)</code></td><td>Load calibration test data as TestDataset</td></tr>
+<tr><td><code>load_synthetic_system(...)</code></td><td>Generate data from the synthetic simulation</td></tr>
+</table>
+</div>
+
+<h3>Analysis Functions</h3>
+<div class="card">
+<table>
+<tr><th>Function</th><th>Module</th><th>Purpose</th></tr>
+<tr><td><code>HVInterpolator(tank_data)</code></td><td>interpolation</td>
+    <td>Bilinear pitch/roll + linear height interpolation</td></tr>
+<tr><td><code>compute_residuals(dataset)</code></td><td>comparison</td>
+    <td>Indicated minus actual with scale interpolation</td></tr>
+<tr><td><code>compute_error_statistics(residuals)</code></td><td>comparison</td>
+    <td>Mean, RMS, max, percentiles, binned breakdown</td></tr>
+<tr><td><code>decompose_errors(residuals, density_lab)</code></td><td>error_analysis</td>
+    <td>Density vs volume error attribution</td></tr>
+<tr><td><code>attitude_sensitivity(residuals)</code></td><td>error_analysis</td>
+    <td>2D pitch/roll error heatmap data</td></tr>
+<tr><td><code>fuel_level_sensitivity(residuals)</code></td><td>error_analysis</td>
+    <td>Error statistics binned by fuel level</td></tr>
+<tr><td><code>generate_dashboard(data, residuals, path)</code></td><td>dashboard</td>
+    <td>Single-file HTML with 4 interactive Plotly.js views</td></tr>
+</table>
+</div>
+
+<h2>Notebook</h2>
+<div class="card">
+<p>The <code>notebooks/gauging_analysis.ipynb</code> Jupyter notebook provides a
+complete walkthrough of the analysis pipeline with 8 sections:</p>
+<ol>
+<li>Setup &amp; Import</li>
+<li>Data Exploration</li>
+<li>H-V Table Validation</li>
+<li>Interpolation Verification</li>
+<li>Test Data Comparison</li>
+<li>Error Decomposition</li>
+<li>Dashboard Generation</li>
+<li>Parameter Study (defuel vs refuel)</li>
+</ol>
+<p>Run it with Jupyter: <code>jupyter notebook notebooks/gauging_analysis.ipynb</code></p>
+</div>
+
+</div>
+</body>
+</html>

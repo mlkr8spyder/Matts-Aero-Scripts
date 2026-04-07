@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fuel Gauging System — Documentation</title>
+<style>
+  :root {
+    --accent: #1565C0; --accent-light: #E3F2FD; --bg: #FAFAFA;
+    --card-bg: #FFF; --text: #212121; --border: #E0E0E0;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+         color: var(--text); background: var(--bg); line-height: 1.6; }
+  .hero { background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+          color: white; padding: 60px 32px; text-align: center; }
+  .hero h1 { font-size: 28px; font-weight: 600; margin-bottom: 12px; }
+  .hero p { font-size: 16px; opacity: 0.85; max-width: 600px; margin: 0 auto; }
+  .container { max-width: 800px; margin: 0 auto; padding: 40px 24px; }
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 32px; }
+  .card { background: var(--card-bg); border-radius: 12px; padding: 28px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: transform 0.2s, box-shadow 0.2s;
+          text-decoration: none; color: var(--text); display: block; }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+  .card h2 { font-size: 20px; margin-bottom: 8px; }
+  .card p { font-size: 14px; color: #616161; }
+  .card .icon { font-size: 36px; margin-bottom: 12px; display: block; }
+  .card-blue .icon { color: #1565C0; }
+  .card-blue h2 { color: #1565C0; }
+  .card-green .icon { color: #2E7D32; }
+  .card-green h2 { color: #2E7D32; }
+  .links { margin-top: 40px; text-align: center; }
+  .links h3 { font-size: 16px; color: #616161; margin-bottom: 12px; }
+  .links a { color: var(--accent); text-decoration: none; margin: 0 12px; font-size: 14px; }
+  .links a:hover { text-decoration: underline; }
+  @media (max-width: 600px) { .cards { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>Fuel Gauging System</h1>
+  <p>Capacitance-based fuel quantity indication simulation and analysis toolkit
+     for aerospace fuel system engineers.</p>
+</div>
+
+<div class="container">
+
+<div class="cards">
+  <a href="fuel_system_guide.html" class="card card-blue">
+    <span class="icon">&#9881;</span>
+    <h2>Synthetic System Reference</h2>
+    <p>5-tank simulation architecture, probe types, error model, H-V table format,
+       and data generation pipeline. Start here to understand what the system produces.</p>
+  </a>
+
+  <a href="analysis_tools_guide.html" class="card card-green">
+    <span class="icon">&#128202;</span>
+    <h2>Analysis Tools Guide</h2>
+    <p>Step-by-step guide for importing real and synthetic data, computing error
+       statistics, generating dashboards, and writing custom adapters.</p>
+  </a>
+</div>
+
+<div class="links">
+  <h3>Additional Resources</h3>
+  <a href="DATA_SCHEMA.md">Data Schema</a>
+  <a href="GPT_DATA_ADAPTER_GUIDE.md">Data Adapter Guide</a>
+  <a href="../README.md">Project README</a>
+  <a href="../notebooks/gauging_analysis.ipynb">Analysis Notebook</a>
+</div>
+
+</div>
+</body>
+</html>

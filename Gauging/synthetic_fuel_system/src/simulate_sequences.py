@@ -31,7 +31,10 @@ def _attitude_profile(n_samples: int, rng: np.random.Generator,
     Generate a slowly-varying attitude profile.
     Simulates ground operations with gentle pitch/roll variations.
     """
-    # Random walk filtered through a low-pass (cumsum + decay)
+    # First-order exponential low-pass filter with mean reversion.
+    # alpha = 0.005 gives time constant tau = 1/alpha = 200 samples (~200s).
+    # This produces slowly-varying attitude that mimics ground operations
+    # (taxi, fuel truck loading) with occasional gentle excursions.
     dt = 1.0  # seconds per sample
 
     # Pitch: slow wander
@@ -98,6 +101,10 @@ def simulate_defuel(tanks: dict = None, all_tables: dict = None,
         [5],      # Phase 3: T5
         [3],      # Phase 4: T3
     ]
+    # Drain rates chosen so each tank empties over its assigned phase duration.
+    # Rate = usable_height / phase_samples. For example:
+    #   T1: 16" usable / 200 samples = 0.078"/sample
+    #   T2: 18" usable / 350 samples = 0.050"/sample (shared phase with T4)
     drain_rates = {
         1: 0.078,
         2: 0.050,
@@ -159,7 +166,9 @@ def simulate_defuel(tanks: dict = None, all_tables: dict = None,
 
     df = pd.DataFrame(records)
 
-    # Add scale weight at endpoints (simulating weigh events)
+    # Simulate scale checkpoints at phase boundaries.
+    # In real operations, the aircraft is weighed at the start, end, and at
+    # key transition points during a calibration defuel/refuel.
     df['scale_gross_weight_lb'] = np.nan
     dry_weight = 12000.0  # synthetic dry weight
 

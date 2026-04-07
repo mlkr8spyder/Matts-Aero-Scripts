@@ -23,6 +23,10 @@ from .tank_geometry import (
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
+# Attitude grid covers the operational envelope for ground and flight conditions.
+# Pitch: +/-6 deg spans taxi, takeoff rotation, and climb/descent attitudes.
+# Roll: +/-8 deg covers ground turning and moderate flight maneuvering.
+# Height step: 0.5" balances table size (~40 points/tank) vs interpolation accuracy.
 DEFAULT_PITCH_RANGE = np.arange(-6, 7, 1.0)      # -6 to +6 deg, 1° step
 DEFAULT_ROLL_RANGE = np.arange(-8, 9, 1.0)        # -8 to +8 deg, 1° step
 DEFAULT_HEIGHT_STEP = 0.5                           # inches between table points
@@ -71,6 +75,9 @@ def generate_hv_table_for_tank(tank: Tank, pitch_deg: float, roll_deg: float,
     # The height at the reference point ranges based on attitude
     # We sweep the fuel surface WL at the ref point from below tank floor
     # to above tank ceiling
+    # Extend height range 1" beyond physical tank bounds to ensure the lookup
+    # table covers edge cases where attitude tilts fuel above the ceiling or
+    # below the floor at the probe location.
     wl_start = tank.wl_min - 1.0  # slightly below floor
     wl_end = tank.wl_max + 1.0    # slightly above ceiling
 
@@ -160,6 +167,7 @@ def generate_all_tables(tanks: dict = None,
         tank_tables = []
         for i, pitch in enumerate(pitch_range):
             pitch_row = []
+            # tables[pitch_index][roll_index] — row-major: outer loop is pitch
             for j, roll in enumerate(roll_range):
                 table = generate_hv_table_for_tank(
                     tank, pitch, roll, height_step, debug=debug

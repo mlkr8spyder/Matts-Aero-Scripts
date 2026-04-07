@@ -31,6 +31,7 @@ from src.hv_table_generator import generate_all_tables
 PLOT_DIR = Path(__file__).parent.parent / "plots"
 PLOT_DIR.mkdir(exist_ok=True)
 
+# Per-tank colors matched to the interactive probe coverage tool's palette.
 TANK_COLORS = {1: '#2196F3', 2: '#4CAF50', 3: '#FF9800', 4: '#E91E63', 5: '#9C27B0'}
 TANK_NAMES = {1: 'T1 Forward', 2: 'T2 Left', 3: 'T3 Center', 4: 'T4 Right', 5: 'T5 Aft'}
 
@@ -142,6 +143,8 @@ def plot_hv_curves():
     pi_zero = list(pitch_range).index(0.0)
     ri_zero = list(roll_range).index(0.0)
 
+    # Sample 6 representative attitudes to show H-V curve sensitivity:
+    # level, +/- pitch, +/- roll, and one combined case.
     attitudes = [
         (0, 0, 'Level (0°/0°)', 'k', '-'),
         (3, 0, 'Pitch +3°', '#E91E63', '--'),
@@ -280,7 +283,8 @@ def plot_defuel_error_timeseries(df: pd.DataFrame):
     ax1.set_title('Defuel Sequence — Error Analysis', fontsize=14, fontweight='bold')
     ax1.grid(True, alpha=0.3)
 
-    # Mark phase boundaries
+    # Phase boundaries match the defuel sequence defined in simulate_sequences.py.
+    # If the defuel phase timing changes, update these markers accordingly.
     for x_val, label in [(0, 'T1'), (200, 'T2+T4'), (550, 'T5'), (750, 'T3')]:
         if x_val < len(df):
             ax1.axvline(x_val, color='gray', ls='--', alpha=0.5)

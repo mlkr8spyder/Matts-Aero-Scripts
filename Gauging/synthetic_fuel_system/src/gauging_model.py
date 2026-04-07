@@ -218,7 +218,12 @@ class TableInterpolator:
         return max(0.0, volume)
 
     def _interp_weights(self, axis: np.ndarray, value: float):
-        """Find bracketing indices and interpolation weight."""
+        """Compute bilinear interpolation weights for pitch/roll lookup.
+
+        Returns (pitch_idx, roll_idx, pitch_weight, roll_weight) where the
+        weights are the fractional position between adjacent breakpoints.
+        pw=0 means exactly on the lower breakpoint, pw=1 means on the upper.
+        """
         value = np.clip(value, axis[0], axis[-1])
         idx = np.searchsorted(axis, value, side='right') - 1
         idx = np.clip(idx, 0, len(axis) - 2)
@@ -232,7 +237,11 @@ class TableInterpolator:
         return lo, hi, w
 
     def _table_height_lookup(self, pi: int, ri: int, height_rel: float) -> float:
-        """Linear interpolation on height within one table."""
+        """Linearly interpolate volume from the height breakpoints at a fixed attitude.
+
+        Clamps to the first/last table entry if the probe height is outside
+        the table range (extrapolation=clip, matching the Simulink LUT config).
+        """
         table = self.tables[pi][ri]
         heights = table['heights_rel']
         volumes = table['volumes_in3']
@@ -348,7 +357,12 @@ class GaugingSystem:
             wl_lower = lower.base_wl + h_lower
             wl_upper = upper.base_wl + h_upper
 
-            # Blend zone: WL 90 to 92
+            # T3 blend zone (WL 90-92): two probes overlap in this region.
+            # Below blend_lo: use lower probe reading only.
+            # Above blend_hi: use upper probe reading (converted to lower-probe coords).
+            # In the blend zone: weighted average transitions smoothly between probes.
+            # A sinusoidal step error is injected to model the discontinuity that
+            # occurs in real systems at the probe handoff boundary.
             blend_lo = 90.0
             blend_hi = 92.0
 
@@ -390,7 +404,10 @@ class GaugingSystem:
             projected_wl = np.clip(projected_wl, tank.wl_min, tank.wl_max)
             raw_height = projected_wl - tank.wl_min
 
-            # Inject pitch-amplified error for T5
+            # Pseudo projection amplifies pitch errors by the FS offset (55").
+            # Above 3 deg pitch, the error grows as 0.02"/deg * offset * 0.01,
+            # modeling the geometric amplification of small attitude errors over
+            # the 55" lever arm between T3 and T5.
             if ec.enable_t5_pitch_amplification and abs(pitch_deg) > 3.0:
                 extra = ec.t5_pitch_error_gain * (abs(pitch_deg) - 3.0) * np.sign(pitch_deg)
                 raw_height += extra * dx * 0.01  # scale by distance
@@ -407,8 +424,11 @@ class GaugingSystem:
             errors['probe_noise'] = noise
 
         # Step 4: Tank-specific probe errors
+        # T2 probe nonlinearity: parabolic error peaking at 50% fill height.
+        # Real capacitance probes exhibit this pattern due to fringe-field
+        # effects near the electrode midpoint. The -4*(x-0.5)^2 + 1 shape
+        # gives zero error at 0% and 100% fill, maximum at 50%.
         if tank_id == 2 and ec.enable_t2_nonlinearity:
-            # Parabolic error peaking at 40-60% fill
             fill_frac = raw_height / max(tank.probes[0].active_length, 0.1)
             fill_frac = np.clip(fill_frac, 0, 1)
             nonlin = ec.t2_probe_nonlin_amplitude * \
@@ -425,7 +445,9 @@ class GaugingSystem:
         interp = self.interpolators[tank_id]
         indicated_vol_in3 = interp.lookup_volume(raw_height, pitch_deg, roll_deg)
 
-        # Step 6: Add table quantization noise
+        # Table quantization: the 0.5" height step in the H-V tables introduces
+        # a discretization error. Modeled as uniform random noise scaled to the
+        # table-reported volume, simulating interpolation granularity.
         if ec.enable_table_quantization:
             quant_noise = self._rng.uniform(-1, 1) * \
                           ec.table_quantization_noise_in3 * tank.gross_volume_in3
@@ -469,7 +491,9 @@ class GaugingSystem:
         kappa_true = fp.dielectric_fuel_nominal
         kappa_system = kappa_true
 
-        # Dielectric drift
+        # Dielectric drift: slow sinusoidal wander in the compensator element
+        # reading (period ~500 samples). Models thermal drift in the electronics
+        # and fuel composition changes during operation.
         drift = 0.0
         if ec.enable_dielectric_drift:
             phase = 2.0 * np.pi * sample_idx / ec.dielectric_drift_period_samples

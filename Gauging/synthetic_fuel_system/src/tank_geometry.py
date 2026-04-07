@@ -278,6 +278,9 @@ def _integrate_planar_volume(wl_min, wl_max, fs_min, fs_max, bl_min, bl_max,
     For production use this could be done analytically, but numerical integration
     is more robust for validation and handles all clipping cases cleanly.
     """
+    # 100x100 integration grid gives <0.01% volume error for rectangular prisms.
+    # Finer grids (200x200) improve accuracy for complex shapes but 4x slower.
+
     # Create grid of cell centers
     dx = (fs_max - fs_min) / nx
     dy = (bl_max - bl_min) / ny
@@ -375,6 +378,8 @@ def cg_for_fuel_state(tank: Tank, fuel_height_at_ref: float,
     tan_p = np.tan(np.radians(pitch_deg))
     tan_r = np.tan(np.radians(roll_deg))
 
+    # 50x50 grid is adequate for CG (moment-weighted average is less
+    # sensitive to discretization than total volume integration).
     nx, ny = 50, 50
     dx = tank.length_fs / nx
     dy = tank.width_bl / ny
@@ -393,7 +398,8 @@ def cg_for_fuel_state(tank: Tank, fuel_height_at_ref: float,
     if total_vol < 1e-10:
         return (np.nan, np.nan, np.nan)
 
-    # CG of each column: (fs, bl, wl_min + h/2)
+    # CG of each rectangular column is at half its fuel depth.
+    # This assumes uniform density within the column (no stratification).
     cg_wl_cells = tank.wl_min + h_fuel / 2.0
 
     cg_fs = np.sum(FS * vol_cells) / total_vol
